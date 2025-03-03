@@ -24,8 +24,8 @@
 #define CONTINUOUS_ACQ 1
 
 // Packet parameters
-#define USE_SOFTWARE_CRYPTO 0
-#define USE_HARDWARE_CRYPTO 1 
+#define USE_SOFTWARE_CRYPTO 0  // [PERF] Encode packet 521391 cycles.
+#define USE_HARDWARE_CRYPTO 1  // [PERF] Encode packet 17244 cycles.
 #define USE_CRYPTO USE_HARDWARE_CRYPTO  // Select hardware or software crypto
 
 

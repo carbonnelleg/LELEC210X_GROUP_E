@@ -328,6 +328,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
+pycryptodome==3.21.0
 pydantic==1.10.21
     # via leaderboard
 pydub==0.25.1

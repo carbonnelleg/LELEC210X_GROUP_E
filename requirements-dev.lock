@@ -347,6 +347,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
+pycryptodome==3.21.0
 pydantic==1.10.21
     # via leaderboard
 pydub==0.25.1
@@ -547,7 +548,7 @@ wsproto==1.2.0
 wtforms==3.1.2
     # via flask-wtf
 xgboost==2.1.4
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@711e72c292327674c4a0593fdbb83d6347738ec9
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@673277e510ebd996b62a2fcc76169bf3cce29910
 zipp==3.20.1
     # via importlib-metadata
     # via importlib-resources

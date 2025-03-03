@@ -57,21 +57,62 @@ void tag_cbc_mac(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
 }
 
 /**
- * @brief  This function calculates the AES CMAC tag of a message. (Different from the CBC-MAC)
- * @param  tag: pointer to the tag buffer.
- * @param  msg: pointer to the message buffer.
- * @param  msg_len: length of the message buffer in bytes.
- * @retval None
+ * @brief Calculate the tag of the packet using the hardware crypto module
+ * @param tag : the tag to be calculated
+ * @param msg : the message to be tagged
+ * @param msg_len : the length of the message
  */
 void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
-	/**
-	 * CRYP_HandleTypeDef *hcryp : pointer to the CRYP_HandleTypeDef structure that contains the configuration information for the CRYP peripheral.
-	 * uint8_t *pInputData : pointer to the input data buffer.
-	 * uint64_t Size : length of the input data buffer in bytes.
-	 * uint8_t *pOutputData : pointer to the output data buffer.
-	 * uint32_t Timeout : Timeout duration.
-	 */
-	HAL_CRYPEx_AES_Auth(&hcryp, (uint8_t*)msg, msg_len, tag, 1000);
+    // Create aligned buffers for temp storage
+    __ALIGN_BEGIN static uint8_t iv[16] __ALIGN_END = {0};
+    // Allocate enough space for all blocks
+    __ALIGN_BEGIN static uint8_t *tmp_out = NULL;
+    
+    // Calculate number of blocks needed (rounded up)
+    size_t num_blocks = (msg_len + 15) / 16;
+    size_t total_size = num_blocks * 16;
+    
+    // Allocate memory for all blocks
+    tmp_out = malloc(total_size);
+    if (tmp_out == NULL) {
+        Error_Handler();
+        return;
+    }
+    
+    // Step 1: reset the AES peripheral
+    if (HAL_CRYP_DeInit(&hcryp) != HAL_OK) {
+        free(tmp_out);
+        Error_Handler();
+        return;
+    }
+
+    // Step 2: Configure for CBC mode
+    hcryp.Init.DataType = CRYP_DATATYPE_8B;
+    hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
+    hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
+    hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+    hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
+    hcryp.Init.pKey = (uint32_t*)AES_Key;
+    hcryp.Init.pInitVect = (uint32_t*)iv;
+
+    if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
+        free(tmp_out);
+        Error_Handler();
+        return;
+    }
+
+    // Step 3: Perform CBC encryption with proper padding
+    if (HAL_CRYP_AESCBC_Encrypt(&hcryp, (uint8_t *)msg, msg_len, tmp_out, 1000) != HAL_OK) {
+        free(tmp_out);
+        Error_Handler();
+        return;
+    }
+
+    // Step 4: Copy the last block as the MAC
+    memcpy(tag, tmp_out + ((num_blocks - 1) * 16), 16);
+    
+    // Clean up
+    free(tmp_out);
 }
 
 // Assumes payload is already in place in the packet
@@ -119,9 +160,9 @@ int make_packet(uint8_t *packet, size_t payload_len, uint8_t sender_id, uint32_t
 	// For the tag field, you have to calculate the tag. The function call below is correct but
 	// tag_cbc_mac function, calculating the tag, is not implemented.
 	#if USE_CRYPTO == USE_HARDWARE_CRYPTO
-	tag_cbc_mac_hardware(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+    	tag_cbc_mac_hardware(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
 	#else
-    tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+		tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
 	#endif
 
     return packet_len;

@@ -28,38 +28,32 @@ CRYP_HandleTypeDef hcryp;
 __ALIGN_BEGIN static const uint8_t pKeyAES[16] __ALIGN_END = {
                             0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
                             0x00,0x00,0x00,0x00,0x00,0x00};
-__ALIGN_BEGIN static const uint8_t HeaderAES[64] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t pInitVectAES[16] __ALIGN_END = {
                             0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-                            0x00,0x00,0x00,0x00};
+                            0x00,0x00,0x00,0x00,0x00,0x00};
 
 /* AES init function */
 void MX_AES_Init(void)
 {
 
   /* USER CODE BEGIN AES_Init 0 */
-
+  __HAL_RCC_AES_CLK_ENABLE();
   /* USER CODE END AES_Init 0 */
 
   /* USER CODE BEGIN AES_Init 1 */
 
   // only possible configuration for CMAC
-  hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
+  //hcryp.Init.OperatingMode = CRYP_ALGOMODE_TAG_GENERATION;
+
   /* USER CODE END AES_Init 1 */
   hcryp.Instance = AES;
-  hcryp.Init.DataType = CRYP_DATATYPE_32B;
+  hcryp.Init.DataType = CRYP_DATATYPE_8B;
   hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
   hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
-  hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CMAC;
-  hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_DISABLE;
-  hcryp.Init.GCMCMACPhase = CRYP_GCMCMAC_FINAL_PHASE;
+  hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+  hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
   hcryp.Init.pKey = (uint8_t *)pKeyAES;
-  hcryp.Init.Header = (uint8_t *)HeaderAES;
-  hcryp.Init.HeaderSize = 64;
+  hcryp.Init.pInitVect = (uint8_t *)pInitVectAES;
   if (HAL_CRYP_Init(&hcryp) != HAL_OK)
   {
     Error_Handler();
