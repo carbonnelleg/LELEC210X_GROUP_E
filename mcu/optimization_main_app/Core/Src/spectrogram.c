@@ -55,17 +55,20 @@ q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed 
 q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]; // Intermediate buffer for arm_mat_mult_fast_q15
 
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
+	// Pre-check all triangles once (cache locality)
     for (size_t i = 0; i < mel_len; i++) {
-        mel_trian_t mel_triangle = mel_triangles[i];
-		if (mel_triangle.idx_offset + mel_triangle.triangle_len > fft_len) {
-			// Error: Mel triangle is too large for the FFT array
-			DEBUG_PRINT("Error: Mel triangle is too large for the FFT array\n");
-			return;
-		}
-		q15_t* fft_samples = &fft_array[mel_triangle.idx_offset];
+        if (mel_triangles[i].idx_offset + mel_triangles[i].triangle_len > fft_len) {
+            DEBUG_PRINT("Error: Mel triangle %d is too large\n", i);
+            return;
+        }
+    }
+
+	// Process all Mel triangles at once (cache locality optimization)
+    for (size_t i = 0; i < mel_len; i++) {
+		q15_t* fft_samples = &fft_array[mel_triangles[i].idx_offset];
 		q63_t mel_result;
 		// Compute the dot product of the FFT samples and the Mel triangle
-        arm_dot_prod_q15(fft_samples, mel_triangle.values, mel_triangle.triangle_len, &mel_result);
+        arm_dot_prod_q15(fft_samples,  mel_triangles[i].values,  mel_triangles[i].triangle_len, &mel_result);
 		// Store the result in the Mel array
 		mel_array[i] = clip_q63_to_q15(mel_result);
     }
