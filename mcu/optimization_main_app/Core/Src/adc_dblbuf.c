@@ -139,41 +139,39 @@ static void send_spectrogram() {
 }
 
 static void ADC_Callback(int buf_cplt) {
-	if (rem_n_bufs != -1) {
-		rem_n_bufs--;
-	}
-	// Check if we have collected all the mel vectors
-	if (rem_n_bufs == 0) {
-		#if ACQ_MODE == ACQ_STOP_START
-			StopADCAcq();
-		#elif ACQ_MODE == ACQ_OVERLAP
-			// Send the current spectrogram
-			send_spectrogram();
+    if (rem_n_bufs != -1) {
+        rem_n_bufs--;
+    }
 
-			// Reset counters and restart acquisition
-			cur_melvec = 0;
-			rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
-			
-			// Don't stop ADC, let it continue running
-		#endif
-	} else if (ADCDataRdy[1-buf_cplt]) {
-		DEBUG_PRINT("Error: ADC Data buffer full\r\n");
-		Error_Handler();
-	}
+    // Check if ADC buffer is ready
+    if (ADCDataRdy[1-buf_cplt]) {
+        DEBUG_PRINT("Error: ADC Data buffer full\r\n");
+        Error_Handler();
+    }
 
-	// Compute the spectrogram
-	ADCDataRdy[buf_cplt] = 1;
-	START_CYCLE_COUNT_SPECTROGRAM();
-	Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
-	Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
-	STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
-	cur_melvec++;
-	ADCDataRdy[buf_cplt] = 0;
+    // Process the current buffer
+    ADCDataRdy[buf_cplt] = 1;
+    START_CYCLE_COUNT_SPECTROGRAM();
+    Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
+    Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
+    STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
+    cur_melvec++;
+    ADCDataRdy[buf_cplt] = 0;
 
-	if (rem_n_bufs == 0) {
-		print_spectrogram();
-		send_spectrogram();
-	}
+    // Check if we have collected all mel vectors
+    if (rem_n_bufs == 0) {
+        print_spectrogram();
+        send_spectrogram();
+
+        #if ACQ_MODE == ACQ_STOP_START
+            StopADCAcq();
+        #elif ACQ_MODE == ACQ_OVERLAP
+            // Reset counters and restart acquisition
+            cur_melvec = 0;
+            rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
+            // ADC continues running
+        #endif
+    }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
