@@ -36,7 +36,7 @@
 // Acquisition Overlap mode
 #define ACQ_STOP_START 0  // Stop the acquisition before starting a new one
 #define ACQ_OVERLAP 1     // Overlap the acquisition (start a new one before stopping the previous one)
-#define ACQ_MODE ACQ_STOP_START  // Select either ACQ_STOP_START or ACQ_OVERLAP
+#define ACQ_MODE ACQ_OVERLAP  // Select either ACQ_STOP_START or ACQ_OVERLAP
 
 /*------------------------------------------------------------------------------
 * Radio & Crypto Configuration
