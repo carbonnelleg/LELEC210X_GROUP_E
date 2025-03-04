@@ -13,23 +13,33 @@
 #include "arm_absmax_q15.h"
 
 #include "mel_filter_bank.h"
-#define MEL_MODE_FILTERBANK 0 // DO NOT TOUCH
-#define MEL_MODE_MATRIX 1     // DO NOT TOUCH
-
-// Mel mode selection
-#define MEL_MODE MEL_MODE_FILTERBANK
-
-// Measure cycle count
-#define MEASURE_CYCLE_COUNT
 
 
-
-#ifdef MEASURE_CYCLE_COUNT
-	#define START_CYCLE_COUNT() start_cycle_count()
-	#define STOP_CYCLE_COUNT(str) stop_cycle_count(str)
+// Timings for the other operations
+#if MEASURE_CYCLES_SIGNAL_PROC_OP == 0
+	#define START_CYCLE_COUNT_SIGNAL_PROC_OP()
+	#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str)
 #else
-	#define START_CYCLE_COUNT()
-	#define STOP_CYCLE_COUNT(str)
+	#define START_CYCLE_COUNT_SIGNAL_PROC_OP() start_cycle_count()
+	#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str) stop_cycle_count(str)
+#endif
+
+// Timings for the fft
+#if MEASURE_CYCLES_FFT == 0
+	#define START_CYCLE_COUNT_FFT()
+	#define STOP_CYCLE_COUNT_FFT(str)
+#else
+	#define START_CYCLE_COUNT_FFT() start_cycle_count()
+	#define STOP_CYCLE_COUNT_FFT(str) stop_cycle_count(str)
+#endif
+
+// Mel transform timings
+#if MEASURE_CYCLES_MEL == 0
+	#define START_CYCLE_COUNT_MEL()
+	#define STOP_CYCLE_COUNT_MEL(str)
+#else
+	#define START_CYCLE_COUNT_MEL() start_cycle_count()
+	#define STOP_CYCLE_COUNT_MEL(str) stop_cycle_count(str)
 #endif
 
 q15_t buf    [  SAMPLES_PER_MELVEC  ]; // Windowed samples
@@ -68,7 +78,9 @@ void Spectrogram_Format(q15_t *buf)
 	// /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so are more efficient.
 	// Here we should shift left by 3.
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.1 - Increase fixed-point scale");
 
 	// STEP 0.2 : Remove DC Component
 	//            --> Pointwise substract
@@ -78,9 +90,11 @@ void Spectrogram_Format(q15_t *buf)
 	// Since we use a signed representation, we should now center the value around zero, we can do this by substracting 2**14.
 	// Now the value of buf[i] is in [-2**14 , 2**14 - 1]
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	for(uint16_t i=0; i < SAMPLES_PER_MELVEC; i++) { // Remove DC component
 		buf[i] -= (1 << 14);
 	}
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.2 - Remove DC Component");
 }
 
 // Compute spectrogram of samples and transform into MEL vectors.
@@ -90,7 +104,9 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	//           --> Pointwise product
 	//           Complexity: O(N)
 	//           Number of cycles: <TODO>
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	arm_mult_q15(samples, hamming_window, buf, SAMPLES_PER_MELVEC);
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 1 - Windowing (Hamming)");
 
 	// STEP 2  : Discrete Fourier Transform
 	//           --> In-place Fast Fourier Transform (FFT) on a real signal
@@ -98,12 +114,14 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	//           Complexity: O(Nlog(N))
 	//           Number of cycles: <TODO>
 
+	START_CYCLE_COUNT_FFT();
+
 	// Since the FFT is a recursive algorithm, the values are rescaled in the function to ensure that overflow cannot happen.
 	arm_rfft_instance_q15 rfft_inst;
-
 	arm_rfft_init_q15(&rfft_inst, SAMPLES_PER_MELVEC, 0, 1);
-
 	arm_rfft_q15(&rfft_inst, buf, buf_fft);
+
+	STOP_CYCLE_COUNT_FFT("Step 2 - FFT");
 
 	// STEP 3  : Compute the complex magnitude of the FFT
 	//           Because the FFT can output a great proportion of very small values,
@@ -117,32 +135,40 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	q15_t vmax;
 	uint32_t pIndex=0;
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	arm_absmax_q15(buf_fft, SAMPLES_PER_MELVEC, &vmax, &pIndex);
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.1 - Find the extremum value");
 
 	// STEP 3.2: Normalize the vector - Dynamic range increase
 	//           Complexity: O(N)
 	//           Number of cycles: <TODO>
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	for (int i=0; i < SAMPLES_PER_MELVEC; i++) // We don't use the second half of the symmetric spectrum
 	{
 		buf[i] = (q15_t) (((q31_t) buf_fft[i] << 15) /((q31_t)vmax));
 	}
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.2 - Normalize the vector");
 
 	// STEP 3.3: Compute the complex magnitude
 	//           --> The output buffer is now two times smaller because (real|imag) --> (mag)
 	//           Complexity: O(N)
 	//           Number of cycles: <TODO>
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	arm_cmplx_mag_q15(buf, buf, SAMPLES_PER_MELVEC/2);
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.3 - Compute the complex magnitude");
 
 	// STEP 3.4: Denormalize the vector
 	//           Complexity: O(N)
 	//           Number of cycles: <TODO>
 
+	START_CYCLE_COUNT_SIGNAL_PROC_OP();
 	for (int i=0; i < SAMPLES_PER_MELVEC/2; i++)
 	{
 		buf[i] = (q15_t) ((((q31_t) buf[i]) * ((q31_t) vmax) ) >> 15 );
 	}
+	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.4 - Denormalize the vector");
 
 	// STEP 4:   Apply MEL transform
 	//           --> Fast Matrix Multiplication
@@ -157,10 +183,10 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// /!\ In order to avoid overflows completely the input signals should be scaled down. Scale down one of the input matrices by log2(numColsA) bits to avoid overflows,
 	// as a total of numColsA additions are computed internally for each output element. Because our hz2mel_mat matrix contains lots of zeros in its rows, this is not necessary.
 	
-	START_CYCLE_COUNT();
+	START_CYCLE_COUNT_MEL();
 	#if MEL_MODE == MEL_MODE_FILTERBANK
 		mel_filter_apply(buf, melvec, SAMPLES_PER_MELVEC, MELVEC_LENGTH);
-		STOP_CYCLE_COUNT("Mel filter bank");
+		STOP_CYCLE_COUNT_MEL("Step 4 - Mel filter bank");
 	#elif MEL_MODE == MEL_MODE_MATRIX
 		arm_matrix_instance_q15 hz2mel_inst, fftmag_inst, melvec_inst;
 
@@ -169,7 +195,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 		arm_mat_init_q15(&melvec_inst, MELVEC_LENGTH, 1, melvec);
 
 		arm_mat_mult_fast_q15(&hz2mel_inst, &fftmag_inst, &melvec_inst, buf_tmp);
-		STOP_CYCLE_COUNT("Mel matrix");
+		STOP_CYCLE_COUNT_MEL("Step 4 - Mel matrix");
 	#endif
 	
 }

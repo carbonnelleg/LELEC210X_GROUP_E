@@ -7,6 +7,41 @@
 #include "s2lp.h"
 #include "packet.h"
 
+// Timings for printing the feature vectors
+#if MEASURE_CYCLES_PRINT_FV == 0
+	#define START_CYCLE_COUNT_PRINT_FV()
+	#define STOP_CYCLE_COUNT_PRINT_FV(str)
+#else
+	#define START_CYCLE_COUNT_PRINT_FV() start_cycle_count()
+	#define STOP_CYCLE_COUNT_PRINT_FV(str) stop_cycle_count(str)
+#endif
+
+// Timings for printing the packets
+#if MEASURE_CYCLES_PRINT_PACKET == 0
+	#define START_CYCLE_COUNT_PRINT_PACKET()
+	#define STOP_CYCLE_COUNT_PRINT_PACKET(str)
+#else
+	#define START_CYCLE_COUNT_PRINT_PACKET() start_cycle_count()
+	#define STOP_CYCLE_COUNT_PRINT_PACKET(str) stop_cycle_count(str)
+#endif
+
+// Timings for sending the packet
+#if MEASURE_CYCLES_ENCODE_PACKET == 0
+	#define START_CYCLE_COUNT_ENCODE_PACKET()
+	#define STOP_CYCLE_COUNT_ENCODE_PACKET(str)
+#else
+	#define START_CYCLE_COUNT_ENCODE_PACKET() start_cycle_count()
+	#define STOP_CYCLE_COUNT_ENCODE_PACKET(str) stop_cycle_count(str)
+#endif
+
+// Timings for sending the packet
+#if MEASURE_CYCLES_SEND_PACKET == 0
+	#define START_CYCLE_COUNT_SEND_PACKET()
+	#define STOP_CYCLE_COUNT_SEND_PACKET(str)
+#else
+	#define START_CYCLE_COUNT_SEND_PACKET() start_cycle_count()
+	#define STOP_CYCLE_COUNT_SEND_PACKET(str) stop_cycle_count(str)
+#endif
 
 static volatile uint16_t ADCDoubleBuf[2*ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
 static volatile uint16_t* ADCData[2] = {&ADCDoubleBuf[0], &ADCDoubleBuf[ADC_BUF_SIZE]};
@@ -39,7 +74,7 @@ static void StopADCAcq() {
 
 static void print_spectrogram(void) {
 #if (DEBUGP == 1)
-	start_cycle_count();
+	START_CYCLE_COUNT_PRINT_FV();
 	DEBUG_PRINT("Acquisition complete, sending the following FVs\r\n");
 	for(unsigned int j=0; j < N_MELVECS; j++) {
 		DEBUG_PRINT("FV #%u:\t", j+1);
@@ -48,15 +83,17 @@ static void print_spectrogram(void) {
 		}
 		DEBUG_PRINT("\r\n");
 	}
-	stop_cycle_count("Print FV");
+	STOP_CYCLE_COUNT_PRINT_FV("Print Feature Vec");
 #endif
 }
 
 static void print_encoded_packet(uint8_t *packet) {
 #if (DEBUGP == 1)
+	START_CYCLE_COUNT_PRINT_PACKET();
 	char hex_encoded_packet[2*PACKET_LENGTH+1];
 	hex_encode(hex_encoded_packet, packet, PACKET_LENGTH);
 	DEBUG_PRINT("DF:HEX:%s\r\n", hex_encoded_packet);
+	STOP_CYCLE_COUNT_PRINT_PACKET("Print Encoded Packet");
 #endif
 }
 
@@ -81,14 +118,14 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 static void send_spectrogram() {
 	uint8_t packet[PACKET_LENGTH];
 
-	start_cycle_count();
+	START_CYCLE_COUNT_ENCODE_PACKET();
 	encode_packet(packet, &packet_cnt);
-	stop_cycle_count("Encode packet");
+	STOP_CYCLE_COUNT_ENCODE_PACKET("Encode Packet");
 
-	start_cycle_count();
+	START_CYCLE_COUNT_SEND_PACKET();
 	S2LP_Send(packet, PACKET_LENGTH);
-	stop_cycle_count("Send packet");
-
+	STOP_CYCLE_COUNT_SEND_PACKET("Send Packet");
+	
 	print_encoded_packet(packet);
 }
 

@@ -1,51 +1,88 @@
 /*
- * config.h
- */
+* config.h
+* Configuration file for the MCU application
+*/
 
 #ifndef INC_CONFIG_H_
 #define INC_CONFIG_H_
 
 #include <stdio.h>
 
-// Runtime parameters
+/*==============================================================================
+*                          DO NOT MODIFY SECTION
+*============================================================================*/
+
+// Runtime parameters - DO NOT CHANGE
 #define MAIN_APP 0
 #define EVAL_RADIO 1
 
 #define RUN_CONFIG MAIN_APP
 
-// Radio parameters
-#define ENABLE_RADIO 1
+/*==============================================================================
+*                          CONFIGURABLE SECTION
+*============================================================================*/
 
+/*------------------------------------------------------------------------------
+* System Configuration
+*----------------------------------------------------------------------------*/
 // General UART enable/disable (disable for low-power operation)
 #define ENABLE_UART 1
 
-// In continuous mode, we start and stop continuous acquisition on button press.
-// In non-continuous mode, we send a single packet on button press.
+// Acquisition Mode
+// Set to 1 for continuous mode (start/stop on button press)
+// Set to 0 for single packet mode (send one packet per button press)
 #define CONTINUOUS_ACQ 1
 
-// Packet parameters
-#define USE_SOFTWARE_CRYPTO 0  // [PERF] Encode packet 521391 cycles.
-#define USE_HARDWARE_CRYPTO 1  // [PERF] Encode packet 17244 cycles.
-#define USE_CRYPTO USE_HARDWARE_CRYPTO  // Select hardware or software crypto
+/*------------------------------------------------------------------------------
+* Radio & Crypto Configuration
+*----------------------------------------------------------------------------*/
+// Enable/disable radio communication
+#define ENABLE_RADIO 1
 
+// Cryptography Implementation Selection
+#define USE_SOFTWARE_CRYPTO 0  // Performance: 521391 cycles per packet
+#define USE_HARDWARE_CRYPTO 1  // Performance: 17244 cycles per packet
+#define USE_CRYPTO USE_HARDWARE_CRYPTO  // Select either USE_SOFTWARE_CRYPTO or USE_HARDWARE_CRYPTO
 
-// Spectrogram parameters
+/*------------------------------------------------------------------------------
+* Signal Processing Configuration
+*----------------------------------------------------------------------------*/
+// Spectrogram Parameters
 #define SAMPLES_PER_MELVEC 512
 #define MELVEC_LENGTH 20
 #define N_MELVECS 20
 
-// Enable performance measurements
+// Mel Processing Mode
+#define MEL_MODE_MATRIX 0
+#define MEL_MODE_FILTERBANK 1
+#define MEL_MODE MEL_MODE_FILTERBANK  // Select either MEL_MODE_FILTERBANK or MEL_MODE_MATRIX
+
+/*------------------------------------------------------------------------------
+* Debug Configuration
+*----------------------------------------------------------------------------*/
+// Enable/disable performance measurements
 #define PERF_COUNT 1
 
-// Enable debug print
+// Selective performance measurements (set to 0 to disable)
+#define MEASURE_CYCLES_SIGNAL_PROC_OP 0
+#define MEASURE_CYCLES_FFT 0
+#define MEASURE_CYCLES_MEL 1
+#define MEASURE_CYCLES_ENCODE_PACKET 1
+#define MEASURE_CYCLES_SEND_PACKET 0
+#define MEASURE_CYCLES_PRINT_FV 0
+#define MEASURE_CYCLES_PRINT_PACKET 0
+
+// Enable/disable debug printing
 #define DEBUGP 1
+
+/*==============================================================================
+*                          DO NOT MODIFY SECTION
+*============================================================================*/
 
 #if (DEBUGP == 1)
 #define DEBUG_PRINT(...) do{ printf(__VA_ARGS__ ); } while( 0 )
 #else
 #define DEBUG_PRINT(...) do{ } while ( 0 )
 #endif
-
-
 
 #endif /* INC_CONFIG_H_ */

@@ -92,8 +92,8 @@ void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
     hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
     hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CBC;
     hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
-    hcryp.Init.pKey = (uint32_t*)AES_Key;
-    hcryp.Init.pInitVect = (uint32_t*)iv;
+    hcryp.Init.pKey = (uint8_t*)AES_Key;
+    hcryp.Init.pInitVect = (uint8_t*)iv;
 
     if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
         free(tmp_out);
