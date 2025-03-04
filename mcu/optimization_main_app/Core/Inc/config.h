@@ -62,6 +62,14 @@
 #define MEL_MODE_FILTERBANK 1
 #define MEL_MODE MEL_MODE_FILTERBANK  // Select either MEL_MODE_FILTERBANK or MEL_MODE_MATRIX
 
+// Thresholding Configuration
+#define THRESHOLD_HARD_FULL 0
+#define THRESHOLD_HARD_PER_MELVEC 1
+#define THRESHOLD_LOOSE 2
+#define USE_THRESHOLD 1 // Enable/disable thresholding
+#define THRESHOLD_VALUE 0x2 // Threshold value for the Mel vectors
+#define THRESHOLD_MODE THRESHOLD_HARD_FULL // Select either THRESHOLD_HARD_FULL, THRESHOLD_HARD_PER_MELVEC, or THRESHOLD_LOOSE
+
 /*------------------------------------------------------------------------------
 * Debug Configuration
 *----------------------------------------------------------------------------*/

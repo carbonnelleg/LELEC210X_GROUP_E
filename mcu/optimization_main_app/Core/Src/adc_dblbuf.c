@@ -63,6 +63,7 @@ static uint32_t packet_cnt = 0;
 
 static volatile int32_t rem_n_bufs = 0;
 
+// Function to start the ADC acquisition
 int StartADCAcq(int32_t n_bufs) {
 	rem_n_bufs = n_bufs;
 	cur_melvec = 0;
@@ -73,14 +74,17 @@ int StartADCAcq(int32_t n_bufs) {
 	}
 }
 
+// Function to check if the ADC acquisition is finished
 int IsADCFinished(void) {
 	return (rem_n_bufs == 0);
 }
 
+// Function to stop the ADC acquisition
 static void StopADCAcq() {
 	HAL_ADC_Stop_DMA(&hadc1);
 }
 
+// Function to print the spectrogram (feature vectors) separated by commas
 static void print_spectrogram(void) {
 #if (DEBUGP == 1 & PRINT_FV_SPECTROGRAM == 1)
 	START_CYCLE_COUNT_PRINT_FV();
@@ -96,6 +100,7 @@ static void print_spectrogram(void) {
 #endif
 }
 
+// Function to print the encoded packet in hexadecimal format
 static void print_encoded_packet(uint8_t *packet) {
 #if (DEBUGP == 1 & PRINT_ENCODED_PACKET == 1)
 	START_CYCLE_COUNT_PRINT_PACKET();
@@ -106,6 +111,7 @@ static void print_encoded_packet(uint8_t *packet) {
 #endif
 }
 
+// Function to encode the packet
 static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 	// BE encoding of each mel coef
 	for (size_t i=0; i<N_MELVECS; i++) {
@@ -124,6 +130,7 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 	}
 }
 
+// Function to create and send the packet
 static void send_spectrogram() {
 	uint8_t packet[PACKET_LENGTH];
 
@@ -138,6 +145,50 @@ static void send_spectrogram() {
 	print_encoded_packet(packet);
 }
 
+#if THRESHOLD_MODE == THRESHOLD_HARD_FULL
+	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE*N_MELVECS*MELVEC_LENGTH
+#elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC
+	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE*MELVEC_LENGTH
+#elif THRESHOLD_MODE == THRESHOLD_LOOSE
+	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE
+#endif
+
+// Function to threshold the mel vectors
+char threshold_mel_vectors() {
+	q15_t corrected_threshold = CORRECTED_THRESHOLD_VALUE;
+	#if THRESHOLD_MODE == THRESHOLD_HARD_FULL
+		q15_t accumulator = 0;
+		for (size_t i=0; i < N_MELVECS; i++) {
+			for (size_t j=0; j < MELVEC_LENGTH; j++) {
+				accumulator += abs(mel_vectors[i][j]);
+				if (accumulator > corrected_threshold) {
+					return 1;
+				}
+			}
+		}
+	#elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC
+		for (size_t i=0; i < N_MELVECS; i++) {
+			q15_t accumulator = 0;
+			for (size_t j=0; j < MELVEC_LENGTH; j++) {
+				accumulator += abs(mel_vectors[i][j]);
+				if (accumulator > corrected_threshold) {
+					return 1;
+				}
+			}
+		}
+	#elif THRESHOLD_MODE == THRESHOLD_LOOSE
+		for (size_t i=0; i < N_MELVECS; i++) {
+			for (size_t j=0; j < MELVEC_LENGTH; j++) {
+				if (abs(mel_vectors[i][j]) > corrected_threshold) {
+					return 1;
+				}
+			}
+		}
+	#endif
+	return 0;
+}
+
+// Callback function for the ADC, it is called when one of the two buffers is full
 static void ADC_Callback(int buf_cplt) {
     if (rem_n_bufs != -1) {
         rem_n_bufs--;
@@ -160,8 +211,16 @@ static void ADC_Callback(int buf_cplt) {
 
     // Check if we have collected all mel vectors
     if (rem_n_bufs == 0) {
-        print_spectrogram();
-        send_spectrogram();
+		#if USE_THRESHOLD == 1
+			// If the threshold is reached, print and send the spectrogram
+			if (threshold_mel_vectors()) {
+				print_spectrogram();
+				send_spectrogram();
+			}
+		#else
+			print_spectrogram();
+			send_spectrogram();
+		#endif
 
         #if ACQ_MODE == ACQ_STOP_START
             StopADCAcq();
