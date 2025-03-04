@@ -33,7 +33,7 @@
 // Set to 0 for single packet mode (send one packet per button press)
 #define CONTINUOUS_ACQ 1
 
-// Acquisition Overlap mode
+// Acquisition Overlap mode (BUG: Line vertical at position 3 during overlap)
 #define ACQ_STOP_START 0  // Stop the acquisition before starting a new one
 #define ACQ_OVERLAP 1     // Overlap the acquisition (start a new one before stopping the previous one)
 #define ACQ_MODE ACQ_OVERLAP  // Select either ACQ_STOP_START or ACQ_OVERLAP
@@ -58,8 +58,8 @@
 #define N_MELVECS 20
 
 // Mel Processing Mode
-#define MEL_MODE_MATRIX 0
-#define MEL_MODE_FILTERBANK 1
+#define MEL_MODE_MATRIX 0     // Performance: 20900 cycles per vector
+#define MEL_MODE_FILTERBANK 1 // Performance: 4246 cycles per vector
 #define MEL_MODE MEL_MODE_FILTERBANK  // Select either MEL_MODE_FILTERBANK or MEL_MODE_MATRIX
 
 // Thresholding Configuration

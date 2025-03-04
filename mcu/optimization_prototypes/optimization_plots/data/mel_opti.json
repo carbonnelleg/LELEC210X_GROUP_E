@@ -1,0 +1,7 @@
+{
+    "title": "Optimization of Mel Filterbank",
+    "xlabel": "Optimization",
+    "ylabel": "Cycle Count",
+    "x": ["Matrix Multiplication", "Sparse Triangle Naive", "Sparse Triangle\n SIMD Optimized"],
+    "y": [20876, 19854, 4246]
+}
