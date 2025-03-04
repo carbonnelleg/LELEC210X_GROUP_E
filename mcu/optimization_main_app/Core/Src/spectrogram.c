@@ -14,33 +14,41 @@
 
 #include "mel_filter_bank.h"
 
-
-// Timings for the other operations
-#if MEASURE_CYCLES_SIGNAL_PROC_OP == 0
+#if MEASURE_CYCLES_FULL_SPECTROGRAM == 0
 	#define START_CYCLE_COUNT_SIGNAL_PROC_OP()
 	#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str)
-#else
-	#define START_CYCLE_COUNT_SIGNAL_PROC_OP() start_cycle_count()
-	#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str) stop_cycle_count(str)
-#endif
-
-// Timings for the fft
-#if MEASURE_CYCLES_FFT == 0
 	#define START_CYCLE_COUNT_FFT()
 	#define STOP_CYCLE_COUNT_FFT(str)
-#else
-	#define START_CYCLE_COUNT_FFT() start_cycle_count()
-	#define STOP_CYCLE_COUNT_FFT(str) stop_cycle_count(str)
-#endif
-
-// Mel transform timings
-#if MEASURE_CYCLES_MEL == 0
 	#define START_CYCLE_COUNT_MEL()
 	#define STOP_CYCLE_COUNT_MEL(str)
 #else
-	#define START_CYCLE_COUNT_MEL() start_cycle_count()
-	#define STOP_CYCLE_COUNT_MEL(str) stop_cycle_count(str)
-#endif
+	// Timings for the other operations
+	#if MEASURE_CYCLES_SIGNAL_PROC_OP == 0
+		#define START_CYCLE_COUNT_SIGNAL_PROC_OP()
+		#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str)
+	#else
+		#define START_CYCLE_COUNT_SIGNAL_PROC_OP() start_cycle_count()
+		#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str) stop_cycle_count(str)
+	#endif
+
+	// Timings for the fft
+	#if MEASURE_CYCLES_FFT == 0
+		#define START_CYCLE_COUNT_FFT()
+		#define STOP_CYCLE_COUNT_FFT(str)
+	#else
+		#define START_CYCLE_COUNT_FFT() start_cycle_count()
+		#define STOP_CYCLE_COUNT_FFT(str) stop_cycle_count(str)
+	#endif
+
+	// Mel transform timings
+	#if MEASURE_CYCLES_MEL == 0
+		#define START_CYCLE_COUNT_MEL()
+		#define STOP_CYCLE_COUNT_MEL(str)
+	#else
+		#define START_CYCLE_COUNT_MEL() start_cycle_count()
+		#define STOP_CYCLE_COUNT_MEL(str) stop_cycle_count(str)
+	#endif
+#endif // MEASURE_CYCLES_FULL_SPECTROGRAM
 
 q15_t buf    [  SAMPLES_PER_MELVEC  ]; // Windowed samples
 q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed for arm_rfft_q15

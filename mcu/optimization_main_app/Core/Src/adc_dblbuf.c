@@ -43,6 +43,15 @@
 	#define STOP_CYCLE_COUNT_SEND_PACKET(str) stop_cycle_count(str)
 #endif
 
+// Timings for the whole spectrogram computation
+#if MEASURE_CYCLES_FULL_SPECTROGRAM == 0
+	#define START_CYCLE_COUNT_SPECTROGRAM()
+	#define STOP_CYCLE_COUNT_SPECTROGRAM(str)
+#else
+	#define START_CYCLE_COUNT_SPECTROGRAM() start_cycle_count()
+	#define STOP_CYCLE_COUNT_SPECTROGRAM(str) stop_cycle_count(str)
+#endif
+
 static volatile uint16_t ADCDoubleBuf[2*ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
 static volatile uint16_t* ADCData[2] = {&ADCDoubleBuf[0], &ADCDoubleBuf[ADC_BUF_SIZE]};
 static volatile uint8_t ADCDataRdy[2] = {0, 0};
@@ -73,7 +82,7 @@ static void StopADCAcq() {
 }
 
 static void print_spectrogram(void) {
-#if (DEBUGP == 1)
+#if (DEBUGP == 1 & PRINT_FV_SPECTROGRAM == 1)
 	START_CYCLE_COUNT_PRINT_FV();
 	DEBUG_PRINT("Acquisition complete, sending the following FVs\r\n");
 	for(unsigned int j=0; j < N_MELVECS; j++) {
@@ -88,7 +97,7 @@ static void print_spectrogram(void) {
 }
 
 static void print_encoded_packet(uint8_t *packet) {
-#if (DEBUGP == 1)
+#if (DEBUGP == 1 & PRINT_ENCODED_PACKET == 1)
 	START_CYCLE_COUNT_PRINT_PACKET();
 	char hex_encoded_packet[2*PACKET_LENGTH+1];
 	hex_encode(hex_encoded_packet, packet, PACKET_LENGTH);
@@ -125,7 +134,7 @@ static void send_spectrogram() {
 	START_CYCLE_COUNT_SEND_PACKET();
 	S2LP_Send(packet, PACKET_LENGTH);
 	STOP_CYCLE_COUNT_SEND_PACKET("Send Packet");
-	
+
 	print_encoded_packet(packet);
 }
 
@@ -133,22 +142,36 @@ static void ADC_Callback(int buf_cplt) {
 	if (rem_n_bufs != -1) {
 		rem_n_bufs--;
 	}
+	// Check if we have collected all the mel vectors
 	if (rem_n_bufs == 0) {
-		StopADCAcq();
+		#if ACQ_MODE == ACQ_STOP_START
+			StopADCAcq();
+		#elif ACQ_MODE == ACQ_OVERLAP
+			// Send the current spectrogram
+			send_spectrogram();
+
+			// Reset counters and restart acquisition
+			cur_melvec = 0;
+			rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
+			
+			// Don't stop ADC, let it continue running
+		#endif
 	} else if (ADCDataRdy[1-buf_cplt]) {
 		DEBUG_PRINT("Error: ADC Data buffer full\r\n");
 		Error_Handler();
 	}
+
+	// Compute the spectrogram
 	ADCDataRdy[buf_cplt] = 1;
-	//start_cycle_count();
+	START_CYCLE_COUNT_SPECTROGRAM();
 	Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
 	Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
+	STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
 	cur_melvec++;
-	//stop_cycle_count("spectrogram");
 	ADCDataRdy[buf_cplt] = 0;
 
 	if (rem_n_bufs == 0) {
-		//print_spectrogram();
+		print_spectrogram();
 		send_spectrogram();
 	}
 }

@@ -33,6 +33,11 @@
 // Set to 0 for single packet mode (send one packet per button press)
 #define CONTINUOUS_ACQ 1
 
+// Acquisition Overlap mode
+#define ACQ_STOP_START 0  // Stop the acquisition before starting a new one
+#define ACQ_OVERLAP 1     // Overlap the acquisition (start a new one before stopping the previous one)
+#define ACQ_MODE ACQ_STOP_START  // Select either ACQ_STOP_START or ACQ_OVERLAP
+
 /*------------------------------------------------------------------------------
 * Radio & Crypto Configuration
 *----------------------------------------------------------------------------*/
@@ -64,16 +69,24 @@
 #define PERF_COUNT 1
 
 // Selective performance measurements (set to 0 to disable)
+#define MEASURE_CYCLES_FULL_SPECTROGRAM 0 // (Turns off all other signal processing measurements)
+
 #define MEASURE_CYCLES_SIGNAL_PROC_OP 0
 #define MEASURE_CYCLES_FFT 0
 #define MEASURE_CYCLES_MEL 1
+
 #define MEASURE_CYCLES_ENCODE_PACKET 1
 #define MEASURE_CYCLES_SEND_PACKET 0
+
 #define MEASURE_CYCLES_PRINT_FV 0
 #define MEASURE_CYCLES_PRINT_PACKET 0
 
 // Enable/disable debug printing
 #define DEBUGP 1
+
+// Enable/disable printing for elements of the system
+#define PRINT_FV_SPECTROGRAM 0
+#define PRINT_ENCODED_PACKET 1
 
 /*==============================================================================
 *                          DO NOT MODIFY SECTION
