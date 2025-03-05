@@ -145,47 +145,54 @@ static void send_spectrogram() {
 	print_encoded_packet(packet);
 }
 
-#if THRESHOLD_MODE == THRESHOLD_HARD_FULL
-	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE*N_MELVECS*MELVEC_LENGTH
-#elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC
-	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE*MELVEC_LENGTH
-#elif THRESHOLD_MODE == THRESHOLD_LOOSE
-	#define CORRECTED_THRESHOLD_VALUE THRESHOLD_VALUE
-#endif
-
 // Function to threshold the mel vectors
 char threshold_mel_vectors() {
-	q15_t corrected_threshold = CORRECTED_THRESHOLD_VALUE;
+	// Correct the threshold to compensate for the mean (instead of a division)
 	#if THRESHOLD_MODE == THRESHOLD_HARD_FULL
-		q15_t accumulator = 0;
-		for (size_t i=0; i < N_MELVECS; i++) {
-			for (size_t j=0; j < MELVEC_LENGTH; j++) {
-				accumulator += abs(mel_vectors[i][j]);
-				if (accumulator > corrected_threshold) {
-					return 1;
-				}
-			}
-		}
+		q15_t corrected_threshold =  THRESHOLD_VALUE*N_MELVECS*MELVEC_LENGTH;
 	#elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC
-		for (size_t i=0; i < N_MELVECS; i++) {
-			q15_t accumulator = 0;
-			for (size_t j=0; j < MELVEC_LENGTH; j++) {
-				accumulator += abs(mel_vectors[i][j]);
-				if (accumulator > corrected_threshold) {
-					return 1;
-				}
-			}
-		}
+		q15_t corrected_threshold =  THRESHOLD_VALUE*MELVEC_LENGTH;
 	#elif THRESHOLD_MODE == THRESHOLD_LOOSE
-		for (size_t i=0; i < N_MELVECS; i++) {
-			for (size_t j=0; j < MELVEC_LENGTH; j++) {
-				if (abs(mel_vectors[i][j]) > corrected_threshold) {
-					return 1;
-				}
-			}
-		}
+		q15_t corrected_threshold =  THRESHOLD_VALUE;
 	#endif
-	return 0;
+
+	// Check the threshold
+    #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the mean of all mel vectors
+        q63_t total_sum = 0;
+		// Sum over all mel vectors
+        for (size_t i = 0; i < N_MELVECS; i++) {
+            q63_t block_sum;
+			// Use ARM CMSIS-DSP absolute sum function of the whole mel vector
+            arm_abssum_q15(mel_vectors[i], MELVEC_LENGTH, &block_sum);
+            total_sum += block_sum;
+            if (total_sum > corrected_threshold) {
+                return 1;
+            }
+        }
+
+    #elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC // Threshold on the mean of each mel vector
+        q63_t block_sum;
+		// Check the sum of mean of each mel vector
+        for (size_t i = 0; i < N_MELVECS; i++) {
+            arm_abssum_q15(mel_vectors[i], MELVEC_LENGTH, &block_sum);
+            if (block_sum > corrected_threshold) {
+                return 1;
+            }
+        }
+
+    #elif THRESHOLD_MODE == THRESHOLD_LOOSE // Threshold on the maximum absolute value of each mel vector
+        // Use ARM CMSIS-DSP max absolute value function
+        q15_t max_abs;
+		// Check the maximum absolute value of each mel vector
+        for (size_t i = 0; i < N_MELVECS; i++) {
+            arm_abs_max_q15(mel_vectors[i], MELVEC_LENGTH, &max_abs, NULL);
+            if (max_abs > corrected_threshold) {
+                return 1;
+            }
+        }
+    #endif
+
+    return 0;
 }
 
 // Callback function for the ADC, it is called when one of the two buffers is full
