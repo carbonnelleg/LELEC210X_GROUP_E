@@ -16,6 +16,15 @@
 	#define STOP_CYCLE_COUNT_PRINT_FV(str) stop_cycle_count(str)
 #endif
 
+// Timing for the thresholding
+#if MEASURE_CYCLES_THRESHOLD == 0
+	#define START_CYCLE_COUNT_THRESHOLD()
+	#define STOP_CYCLE_COUNT_THRESHOLD(str)
+#else
+	#define START_CYCLE_COUNT_THRESHOLD() start_cycle_count()
+	#define STOP_CYCLE_COUNT_THRESHOLD(str) stop_cycle_count(str)
+#endif
+
 // Timings for printing the packets
 #if MEASURE_CYCLES_PRINT_PACKET == 0
 	#define START_CYCLE_COUNT_PRINT_PACKET()
@@ -147,6 +156,8 @@ static void send_spectrogram() {
 
 // Function to threshold the mel vectors
 char threshold_mel_vectors() {
+	START_CYCLE_COUNT_THRESHOLD();
+
 	// Correct the threshold to compensate for the mean (instead of a division)
 	#if THRESHOLD_MODE == THRESHOLD_HARD_FULL
 		q15_t corrected_threshold =  THRESHOLD_VALUE*N_MELVECS*MELVEC_LENGTH;
@@ -156,42 +167,60 @@ char threshold_mel_vectors() {
 		q15_t corrected_threshold =  THRESHOLD_VALUE;
 	#endif
 
-	// Check the threshold
-    #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the mean of all mel vectors
-        q63_t total_sum = 0;
-		// Sum over all mel vectors
-        for (size_t i = 0; i < N_MELVECS; i++) {
-            q63_t block_sum;
-			// Use ARM CMSIS-DSP absolute sum function of the whole mel vector
-            arm_abssum_q15(mel_vectors[i], MELVEC_LENGTH, &block_sum);
-            total_sum += block_sum;
-            if (total_sum > corrected_threshold) {
-                return 1;
-            }
-        }
-
+    // Check the threshold
+    #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the sum of all mel vectors
+		q31_t total_sum = 0;
+		q15_t temp_buf[MELVEC_LENGTH];
+		
+		for (size_t i = 0; i < N_MELVECS; i++) {
+			q31_t block_sum;
+			// Copy and get absolute values
+			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
+			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
+			// Sum the absolute values
+			for (size_t j = 0; j < MELVEC_LENGTH; j++) {
+				total_sum += temp_buf[j];
+			}
+			// If the threshold is reached, return
+			if (total_sum > corrected_threshold) {
+				STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
+				return 1;
+			}
+		}
+        STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
     #elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC // Threshold on the mean of each mel vector
-        q63_t block_sum;
-		// Check the sum of mean of each mel vector
-        for (size_t i = 0; i < N_MELVECS; i++) {
-            arm_abssum_q15(mel_vectors[i], MELVEC_LENGTH, &block_sum);
-            if (block_sum > corrected_threshold) {
-                return 1;
-            }
-        }
-
+		q15_t temp_buf[MELVEC_LENGTH];
+		for (size_t i = 0; i < N_MELVECS; i++) {
+			q31_t block_sum;
+			// Copy and get absolute values
+			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
+			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
+			// Sum the absolute values
+			for (size_t j = 0; j < MELVEC_LENGTH; j++) {
+				block_sum += temp_buf[j];
+			}
+			// If the threshold is reached, return
+			if (block_sum > corrected_threshold) {
+				STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
+				return 1;
+			}
+		}
+        STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
     #elif THRESHOLD_MODE == THRESHOLD_LOOSE // Threshold on the maximum absolute value of each mel vector
-        // Use ARM CMSIS-DSP max absolute value function
-        q15_t max_abs;
-		// Check the maximum absolute value of each mel vector
-        for (size_t i = 0; i < N_MELVECS; i++) {
-            arm_abs_max_q15(mel_vectors[i], MELVEC_LENGTH, &max_abs, NULL);
-            if (max_abs > corrected_threshold) {
-                return 1;
-            }
-        }
+		for (size_t i=0; i < N_MELVECS; i++) {
+			// Use the arm_absmax_q15 function to find the maximum absolute value
+			q15_t vmax;
+			uint32_t pIndex;
+			arm_absmax_q15(mel_vectors[i], MELVEC_LENGTH, &vmax, &pIndex);
+			// If the threshold is reached, return
+			if (vmax > corrected_threshold) {
+				STOP_CYCLE_COUNT_THRESHOLD("Loose Threshold");
+				return 1;
+			}
+		}
+        STOP_CYCLE_COUNT_THRESHOLD("Loose Threshold");
     #endif
-
+	
     return 0;
 }
 
