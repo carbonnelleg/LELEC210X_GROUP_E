@@ -23,8 +23,16 @@
 *============================================================================*/
 
 /*------------------------------------------------------------------------------
+* Debug Configuration Master
+*----------------------------------------------------------------------------*/
+
+// General define for setting the MCU in no debug mode
+#define NO_DEBUG 0
+
+/*------------------------------------------------------------------------------
 * System Configuration
 *----------------------------------------------------------------------------*/
+
 // General UART enable/disable (disable for low-power operation)
 #define ENABLE_UART 1
 
@@ -101,10 +109,21 @@
 *                          DO NOT MODIFY SECTION
 *============================================================================*/
 
+// Debug print macro
 #if (DEBUGP == 1)
 #define DEBUG_PRINT(...) do{ printf(__VA_ARGS__ ); } while( 0 )
 #else
 #define DEBUG_PRINT(...) do{ } while ( 0 )
+#endif
+
+// Re-define the DEBUGP, PERF_COUNT, and ENABLE_UART macros if NO_DEBUG is set
+#if NO_DEBUG == 1
+#undef DEBUGP
+#undef PERF_COUNT
+#undef ENABLE_UART
+#define DEBUGP 0
+#define PERF_COUNT 0
+#define ENABLE_UART 0
 #endif
 
 #endif /* INC_CONFIG_H_ */

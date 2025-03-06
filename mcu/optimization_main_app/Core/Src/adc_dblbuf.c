@@ -166,7 +166,7 @@ char threshold_mel_vectors() {
 	#elif THRESHOLD_MODE == THRESHOLD_LOOSE
 		q15_t corrected_threshold =  THRESHOLD_VALUE;
 	#endif
-
+ 
     // Check the threshold
     #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the sum of all mel vectors
 		q31_t total_sum = 0;
