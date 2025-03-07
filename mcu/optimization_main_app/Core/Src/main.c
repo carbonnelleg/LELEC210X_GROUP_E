@@ -99,23 +99,30 @@ void run(void)
 
 	while (1)
 	{
-	  while (!btn_press) {
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-		  HAL_Delay(200);
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
-		  HAL_Delay(200);
-	  }
-	  btn_press = 0;
-#if (CONTINUOUS_ACQ == 1)
-	  while (!btn_press) {
-		  acquire_and_send_packet();
-	  }
-	  btn_press = 0;
-#elif (CONTINUOUS_ACQ == 0)
-	  acquire_and_send_packet();
-#else
-#error "Wrong value for CONTINUOUS_ACQ."
-#endif
+    // If NO_BUTTON is set, we acquire and send the packet directly and continuously
+    // Otherwise, we wait for the button press to acquire and send the packet
+    #if NO_BUTTON == 1
+      acquire_and_send_packet();
+    #else
+      // Wait for the button press
+      while (!btn_press) {
+        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
+        HAL_Delay(200);
+        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
+        HAL_Delay(200);
+      }
+      btn_press = 0;
+      #if (CONTINUOUS_ACQ == 1)
+        // Continuous acquisition while the button is not pressed
+        while (!btn_press) {
+          acquire_and_send_packet();
+        }
+        btn_press = 0;
+      #else
+        // Single packet acquisition, then go back to waiting for the button press
+        acquire_and_send_packet();
+      #endif
+    #endif
 	}
 }
 

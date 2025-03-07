@@ -29,6 +29,9 @@
 // General define for setting the MCU in no debug mode
 #define NO_DEBUG 0
 
+// Deactivate the need to use the button to trigger the system
+#define NO_BUTTON 0
+
 /*------------------------------------------------------------------------------
 * System Configuration
 *----------------------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-../Core/Src/adc_dblbuf.c:143:13:send_spectrogram	832	static
+../Core/Src/adc_dblbuf.c:143:13:send_spectrogram	2488	static
 ../Core/Src/adc_dblbuf.c:76:5:StartADCAcq	8	static
 ../Core/Src/adc_dblbuf.c:87:5:IsADCFinished	0	static
 ../Core/Src/adc_dblbuf.c:158:6:threshold_mel_vectors	64	static
