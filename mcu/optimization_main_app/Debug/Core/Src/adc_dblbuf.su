@@ -1,6 +1,6 @@
-../Core/Src/adc_dblbuf.c:143:13:send_spectrogram	2488	static
+../Core/Src/adc_dblbuf.c:274:13:ADC_Callback	1880	static
 ../Core/Src/adc_dblbuf.c:76:5:StartADCAcq	8	static
 ../Core/Src/adc_dblbuf.c:87:5:IsADCFinished	0	static
 ../Core/Src/adc_dblbuf.c:158:6:threshold_mel_vectors	64	static
-../Core/Src/adc_dblbuf.c:272:6:HAL_ADC_ConvCpltCallback	72	static
-../Core/Src/adc_dblbuf.c:277:6:HAL_ADC_ConvHalfCpltCallback	72	static
+../Core/Src/adc_dblbuf.c:325:6:HAL_ADC_ConvCpltCallback	0	static
+../Core/Src/adc_dblbuf.c:330:6:HAL_ADC_ConvHalfCpltCallback	0	static

@@ -225,6 +225,7 @@ char threshold_mel_vectors() {
 }
 
 // Callback function for the ADC, it is called when one of the two buffers is full
+#ifdef USE_BUGGY_CODE
 static void ADC_Callback(int buf_cplt) {
     if (rem_n_bufs != -1) {
         rem_n_bufs--;
@@ -268,6 +269,57 @@ static void ADC_Callback(int buf_cplt) {
         #endif
     }
 }
+#else
+static void ADC_Callback(int buf_cplt) {
+    if (rem_n_bufs != -1) {
+        rem_n_bufs--;
+    }
+
+    // Check if ADC buffer is ready
+    if (ADCDataRdy[1-buf_cplt]) {
+        DEBUG_PRINT("Error: ADC Data buffer full\r\n");
+        Error_Handler();
+    }
+
+    // Process the current buffer
+    ADCDataRdy[buf_cplt] = 1;
+    START_CYCLE_COUNT_SPECTROGRAM();
+    
+    // Save the current buffer state
+    uint16_t saved_samples[ADC_BUF_SIZE];
+    memcpy(saved_samples, (void*)ADCData[buf_cplt], ADC_BUF_SIZE * sizeof(uint16_t));
+    
+    Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
+    Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
+    STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
+    cur_melvec++;
+    ADCDataRdy[buf_cplt] = 0;
+
+    if (rem_n_bufs <= 0 || cur_melvec >= N_MELVECS) {
+        #if USE_THRESHOLD == 1
+            if (threshold_mel_vectors()) {
+                print_spectrogram();
+                send_spectrogram();
+            }
+        #else
+            print_spectrogram();
+            send_spectrogram();
+        #endif
+
+        #if ACQ_MODE == ACQ_STOP_START
+            StopADCAcq();
+        #elif ACQ_MODE == ACQ_OVERLAP
+            // Reset counters while preserving buffer integrity
+            HAL_ADC_Stop_DMA(&hadc1);
+            cur_melvec = 0;
+            rem_n_bufs = N_MELVECS;
+            // Restore the buffer and restart DMA
+            memcpy((void*)ADCData[buf_cplt], saved_samples, ADC_BUF_SIZE * sizeof(uint16_t));
+            HAL_ADC_Start_DMA(&hadc1, (uint32_t *)ADCDoubleBuf, 2*ADC_BUF_SIZE);
+        #endif
+    }
+}
+#endif
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
