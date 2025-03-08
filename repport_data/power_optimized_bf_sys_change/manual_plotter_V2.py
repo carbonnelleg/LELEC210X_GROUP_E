@@ -247,7 +247,11 @@ def main():
             ch1 = processor.voltage_data['CH1']
             ch2 = processor.voltage_data['CH2']
             power = power_formula(ch1, ch2)*1000
-
+            
+            print(f"Processing file {file['filename']}")
+            print(f"Mean MCU Voltage: {np.mean(mcu_voltage(ch2, ch1)):.2f} V")
+            print(f"Mean MCU Current: {np.mean(mcu_current(ch1)):.2f} A")
+            print(f"Mean Power: {np.mean(power):.2f} mW")
             print(f"Number of joules: {np.trapz(power, processor.time):.2f} mJ")
             
             window = PlotWindow(file, processor, power, folder_path)

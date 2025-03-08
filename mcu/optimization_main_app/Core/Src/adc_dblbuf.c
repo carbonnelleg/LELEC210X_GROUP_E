@@ -64,6 +64,7 @@
 static volatile uint16_t ADCDoubleBuf[2*ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
 static volatile uint16_t* ADCData[2] = {&ADCDoubleBuf[0], &ADCDoubleBuf[ADC_BUF_SIZE]};
 static volatile uint8_t ADCDataRdy[2] = {0, 0};
+static volatile uint16_t ADCProcessBuf[ADC_BUF_SIZE]; 
 
 static volatile uint8_t cur_melvec = 0;
 static q15_t mel_vectors[N_MELVECS][MELVEC_LENGTH];
@@ -173,7 +174,6 @@ char threshold_mel_vectors() {
 		q15_t temp_buf[MELVEC_LENGTH];
 		
 		for (size_t i = 0; i < N_MELVECS; i++) {
-			q31_t block_sum;
 			// Copy and get absolute values
 			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
 			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
@@ -191,7 +191,7 @@ char threshold_mel_vectors() {
     #elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC // Threshold on the mean of each mel vector
 		q15_t temp_buf[MELVEC_LENGTH];
 		for (size_t i = 0; i < N_MELVECS; i++) {
-			q31_t block_sum;
+			q31_t block_sum = 0;
 			// Copy and get absolute values
 			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
 			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
@@ -209,8 +209,8 @@ char threshold_mel_vectors() {
     #elif THRESHOLD_MODE == THRESHOLD_LOOSE // Threshold on the maximum absolute value of each mel vector
 		for (size_t i=0; i < N_MELVECS; i++) {
 			// Use the arm_absmax_q15 function to find the maximum absolute value
-			q15_t vmax;
-			uint32_t pIndex;
+			q15_t vmax = 0;
+			uint32_t pIndex = 0;
 			arm_absmax_q15(mel_vectors[i], MELVEC_LENGTH, &vmax, &pIndex);
 			// If the threshold is reached, return
 			if (vmax > corrected_threshold) {
@@ -239,8 +239,10 @@ static void ADC_Callback(int buf_cplt) {
     // Process the current buffer
     ADCDataRdy[buf_cplt] = 1;
     START_CYCLE_COUNT_SPECTROGRAM();
-    Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
-    Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
+    // Process a copy of the buffer, not the original
+	memcpy((void*)ADCProcessBuf, (void*)ADCData[buf_cplt], ADC_BUF_SIZE * sizeof(uint16_t));
+	Spectrogram_Format((q15_t *)ADCProcessBuf);
+	Spectrogram_Compute((q15_t *)ADCProcessBuf, mel_vectors[cur_melvec]);
     STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
     cur_melvec++;
     ADCDataRdy[buf_cplt] = 0;
