@@ -27,7 +27,7 @@
 *----------------------------------------------------------------------------*/
 
 // General define for setting the MCU in no debug mode
-#define NO_DEBUG 1
+#define NO_DEBUG 0
 
 // Deactivate the need to use the button to trigger the system
 #define NO_BUTTON 0
@@ -68,6 +68,11 @@
 #define MELVEC_LENGTH 20
 #define N_MELVECS 20
 
+// Optimize chain computations
+#define CHAIN_NO_OPT 0
+#define CHAIN_OPT 1
+#define CHAIN_OPT_MODE CHAIN_OPT  // Select either CHAIN_NO_OPT or CHAIN_OPT
+
 // Mel Processing Mode
 #define MEL_MODE_MATRIX 0     // Performance: 20900 cycles per vector
 #define MEL_MODE_FILTERBANK 1 // Performance: 4246 cycles per vector
@@ -90,8 +95,8 @@
 // Selective performance measurements (set to 0 to disable)
 #define MEASURE_CYCLES_FULL_SPECTROGRAM 0 // (Turns off all other signal processing measurements)
 
-#define MEASURE_CYCLES_SIGNAL_PROC_OP 0
-#define MEASURE_CYCLES_FFT 0
+#define MEASURE_CYCLES_SIGNAL_PROC_OP 1
+#define MEASURE_CYCLES_FFT 1
 #define MEASURE_CYCLES_MEL 1
 
 #define MEASURE_CYCLES_THRESHOLD 1

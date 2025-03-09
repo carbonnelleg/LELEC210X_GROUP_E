@@ -1,0 +1,35 @@
+Opti before
+
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 0.1 - Increase fixed-point scale 3646 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 0.2 - Remove DC Component 4119 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 1 - Windowing (Hamming) 3903 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 2 - FFT 22438 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 3.1 - Find the extremum value 5958 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 3.2 - Normalize the vector 5777 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 3.3 - Compute the complex magnitude 4651 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 3.4 - Denormalize the vector 2325 cycles.
+[2025-03-09 19:38:19] INFO    : >>[PERF] Step 4 - Mel filter bank 3866 cycles.
+
+Total cycle count = 56683 cycles
+
+Opti After
+
+
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 0 - Shift + DC Removal 5156 cycles.
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 1 - Windowing (Hamming) 3942 cycles.
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 2 - FFT 23959 cycles.
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 3 - Magnitude & Find max 6480 cycles.
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 4 - Normalize magnitude spectrum 2354 cycles.
+[2025-03-09 20:05:01] INFO    : >>[PERF] Step 5 - Mel filter bank 4249 cycles.
+
+Total cycle count = 46150 Cycles
+
+Even more
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 0 & 1 - Shift + DC Removal + Windowing 6187 cycles.
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 2.1 - RFFT INIT 86 cycles.
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 2.2 - RFFT 23985 cycles.
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 3 - Magnitude & Find max 6446 cycles.
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 4 - Normalize magnitude spectrum 35 cycles. # Something broke here
+[2025-03-09 20:28:24] INFO    : >>[PERF] Step 5 - Mel filter bank 4245 cycles.
+
+Total Cycle count = 40984 cycles

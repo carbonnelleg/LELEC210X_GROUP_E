@@ -50,9 +50,16 @@
 	#endif
 #endif // MEASURE_CYCLES_FULL_SPECTROGRAM
 
+#ifdef ALIGN_BUFFER_SIGNALS
+// Using ARM CMSIS alignment attribute
+ALIGN_32BYTES(q15_t buf    [  SAMPLES_PER_MELVEC  ]); // Windowed samples
+ALIGN_32BYTES(q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]); // Double size buffer
+ALIGN_32BYTES(q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]); // Intermediate buffer
+#else
 q15_t buf    [  SAMPLES_PER_MELVEC  ]; // Windowed samples
 q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed for arm_rfft_q15
 q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]; // Intermediate buffer for arm_mat_mult_fast_q15
+#endif
 
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
 	// Pre-check all triangles once (cache locality)
@@ -74,6 +81,116 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
     }
 }
 
+#if CHAIN_OPT_MODE == CHAIN_OPT
+// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
+void Spectrogram_Format(q15_t *buf)
+{
+    // STEP 0 & 1: Combine 0.1 (Increase fixed-point scale) + 0.2 (Remove DC) + 1 (Windowing)
+
+    // Original plan:
+    //  - Shift left by 3 to go from [0..4095] (12-bit) up into [0..32767] (Q15).
+    //  - Then subtract 2^14 = 16384 to recenter around zero.
+	// - Multiply by Hamming window.
+    // Instead, do both in one pass:
+    START_CYCLE_COUNT_SIGNAL_PROC_OP();
+    for (int i = 0; i < SAMPLES_PER_MELVEC; i++)
+	{
+		// shift + DC
+		q31_t shifted = ((q31_t)buf[i] << 3) - (1 << 14);
+
+		// multiply by Hamming
+		q31_t w = (shifted * hamming_window[i]) >> 15;
+
+		// saturate to Q15
+		buf[i] = (q15_t)__SSAT(w, 16);
+	}
+    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0 & 1 - Shift + DC Removal + Windowing");
+}
+
+// Compute spectrogram of samples and transform into MEL vectors.
+void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
+{
+    // STEP 2: Real FFT
+	START_CYCLE_COUNT_FFT();
+    arm_rfft_instance_q15 rfft_inst;
+    // 0 => FFT, 1 => IFFT // 1 => bitReverse
+    arm_rfft_init_q15(&rfft_inst, SAMPLES_PER_MELVEC, 0, 1);
+	STOP_CYCLE_COUNT_FFT("Step 2.1 - RFFT INIT");
+
+    START_CYCLE_COUNT_FFT();
+    arm_rfft_q15(&rfft_inst, buf, buf_fft);
+    STOP_CYCLE_COUNT_FFT("Step 2.2 - RFFT");
+
+    // STEP 3: Compute magnitude and find max in a single pass
+    START_CYCLE_COUNT_SIGNAL_PROC_OP();
+    q15_t vmax = 0;
+
+    for (int i = 0; i < SAMPLES_PER_MELVEC / 2; i++)
+    {
+        q15_t real = buf_fft[2*i];     // Real part
+        q15_t imag = buf_fft[2*i + 1]; // Imag part
+
+        // Approx magnitude: mag = max(|r|, |i|) + 0.375 * min(|r|, |i|)
+        q15_t absR = (real >= 0) ? real : -real;
+        q15_t absI = (imag >= 0) ? imag : -imag;
+        q15_t big  = (absR > absI) ? absR : absI;
+        q15_t small= (absR > absI) ? absI : absR;
+
+        // small >> 2 is small/4, small >> 3 is small/8, so 3*(small>>3) = small*(3/8).
+        // We'll do a single shift:
+        //   mag = big + (3*small)/8
+        //   => mag = big + (small >> 1) - (small >> 3)
+        // or a direct approach:
+        q15_t approx = big + ( (3 * small) >> 3 );
+
+        // Save to buf
+        buf[i] = approx;
+
+        // Track max
+        if (approx > vmax)
+        {
+            vmax = approx;
+        }
+    }
+    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Magnitude & Find max");
+
+    // STEP 4: Normalize
+    START_CYCLE_COUNT_SIGNAL_PROC_OP();
+    if (vmax > 0)
+    {
+        // Manual reciprocal in Q15:
+        //  1.0 in Q15 is 0x7FFF ~ 32767
+        //  We'll do: (32767 << 15) / vmax = Q15 reciprocal
+        //  Then multiply each sample by this reciprocal >> 15
+        q31_t reciprocal = (((q31_t)0x7FFF) << 15) / (q31_t)vmax; 
+        q15_t invVmax = (q15_t)__SSAT(reciprocal, 16); // saturate to Q15
+
+        for (int i = 0; i < SAMPLES_PER_MELVEC / 2; i++)
+        {
+            q31_t tmp = ((q31_t)buf[i] * (q31_t)invVmax) >> 15; 
+            buf[i] = (q15_t)__SSAT(tmp, 16);
+        }
+    }
+    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 4 - Normalize magnitude spectrum");
+
+    // STEP 5: Mel transform
+    START_CYCLE_COUNT_MEL();
+#if MEL_MODE == MEL_MODE_FILTERBANK
+    // e.g., mel_filter_apply(buf, melvec, SAMPLES_PER_MELVEC/2, MELVEC_LENGTH);
+    mel_filter_apply(buf, melvec, SAMPLES_PER_MELVEC, MELVEC_LENGTH);
+    STOP_CYCLE_COUNT_MEL("Step 5 - Mel filter bank");
+#else
+    arm_matrix_instance_q15 hz2mel_inst, fftmag_inst, melvec_inst;
+    arm_mat_init_q15(&hz2mel_inst, MELVEC_LENGTH, SAMPLES_PER_MELVEC/2, hz2mel_mat);
+    arm_mat_init_q15(&fftmag_inst, SAMPLES_PER_MELVEC/2, 1, buf);
+    arm_mat_init_q15(&melvec_inst, MELVEC_LENGTH, 1, melvec);
+
+    arm_mat_mult_fast_q15(&hz2mel_inst, &fftmag_inst, &melvec_inst, buf_tmp);
+    STOP_CYCLE_COUNT_MEL("Step 5 - Mel matrix");
+#endif
+}
+
+#elif CHAIN_OPT_MODE == CHAIN_NO_OPT
 // Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
 void Spectrogram_Format(q15_t *buf)
 {
@@ -210,3 +327,5 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	#endif
 	
 }
+
+#endif // CHAIN_OPT_MODE
