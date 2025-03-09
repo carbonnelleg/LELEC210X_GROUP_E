@@ -127,36 +127,25 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 
     for (int i = 0; i < SAMPLES_PER_MELVEC / 2; i++)
     {
-        q15_t real = buf_fft[2*i];     // Real part
-        q15_t imag = buf_fft[2*i + 1]; // Imag part
+		// Compute magnitude
+		q31_t real = buf_fft[2 * i];
+		q31_t imag = buf_fft[2 * i + 1];
+		q31_t mag = __QADD(__QADD(__SMUAD(real, real), __SMUAD(imag, imag)), 0); // Q31
 
-        // Approx magnitude: mag = max(|r|, |i|) + 0.375 * min(|r|, |i|)
-        q15_t absR = (real >= 0) ? real : -real;
-        q15_t absI = (imag >= 0) ? imag : -imag;
-        q15_t big  = (absR > absI) ? absR : absI;
-        q15_t small= (absR > absI) ? absI : absR;
+		// Find max
+		if (mag > vmax)
+		{
+			vmax = mag;
+		}
 
-        // small >> 2 is small/4, small >> 3 is small/8, so 3*(small>>3) = small*(3/8).
-        // We'll do a single shift:
-        //   mag = big + (3*small)/8
-        //   => mag = big + (small >> 1) - (small >> 3)
-        // or a direct approach:
-        q15_t approx = big + ( (3 * small) >> 3 );
-
-        // Save to buf
-        buf[i] = approx;
-
-        // Track max
-        if (approx > vmax)
-        {
-            vmax = approx;
-        }
-    }
+		// Store magnitude in buf
+		buf[i] = (q15_t)__SSAT(mag, 16);
+	}
     STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Magnitude & Find max");
 
     // STEP 4: Normalize
     START_CYCLE_COUNT_SIGNAL_PROC_OP();
-    if (vmax > 0)
+    if (1)
     {
         // Manual reciprocal in Q15:
         //  1.0 in Q15 is 0x7FFF ~ 32767
