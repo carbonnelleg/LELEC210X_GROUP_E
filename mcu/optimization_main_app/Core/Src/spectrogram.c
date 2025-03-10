@@ -86,10 +86,10 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
 	// Process 4 triangles at once through loop unrolling, and register variables
 	for (size_t i = 0; i < mel_len; i += 4) {
 		// Load the Mel triangle values
-		q15_t* mel_values_0 = mel_triangles[i].values;
-		q15_t* mel_values_1 = mel_triangles[i+1].values;
-		q15_t* mel_values_2 = mel_triangles[i+2].values;
-		q15_t* mel_values_3 = mel_triangles[i+3].values;
+		const q15_t* mel_values_0 = mel_triangles[i].values;
+        const q15_t* mel_values_1 = mel_triangles[i+1].values;
+        const q15_t* mel_values_2 = mel_triangles[i+2].values;
+        const q15_t* mel_values_3 = mel_triangles[i+3].values;
 
 		// Load the FFT samples
 		q15_t* fft_samples_0 = &fft_array[mel_triangles[i].idx_offset];
@@ -113,7 +113,7 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
 
 	// Handle remaining triangles
 	for (size_t i = mel_len & ~3; i < mel_len; i++) {
-		q15_t* mel_values = mel_triangles[i].values;
+		const q15_t* mel_values = mel_triangles[i].values;
 		q15_t* fft_samples = &fft_array[mel_triangles[i].idx_offset];
 		q63_t mel_result;
 		arm_dot_prod_q15(fft_samples, mel_values, mel_triangles[i].triangle_len, &mel_result);
@@ -211,7 +211,7 @@ void Spectrogram_Format(q15_t *buf)
     }
     
     // Handle remaining samples
-    for (; i < SAMPLES_PER_MELVEC; i++)
+    for (; i < SAMPLES_PER_MELVEC; i++) // Unremovable Warning here
     {
         q31_t sample = (q31_t)buf[i];
         sample = (sample << 3) - dc_offset;
@@ -339,6 +339,102 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 		}
 		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Compute the approximate complex magnitude");
 
+	#elif CHAIN_OPTIMIZE_MAGNITUDE == 2
+		// STEP 3: Compute the complex magnitude using optimized unrolled implementation
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		
+		int i = 0;
+		
+		// Process 4 complex samples at once (unroll by 4)
+		for (; i <= SAMPLES_PER_MELVEC/2 - 4; i += 4)
+		{
+			// Load 4 complex samples (8 values - 4 real + 4 imaginary)
+			q15_t real0 = buf_fft[2*i];
+			q15_t imag0 = buf_fft[2*i+1];
+			q15_t real1 = buf_fft[2*(i+1)];
+			q15_t imag1 = buf_fft[2*(i+1)+1];
+			q15_t real2 = buf_fft[2*(i+2)];
+			q15_t imag2 = buf_fft[2*(i+2)+1];
+			q15_t real3 = buf_fft[2*(i+3)];
+			q15_t imag3 = buf_fft[2*(i+3)+1];
+			
+			#if MAG_APPROX == MAG_APPROX_ABS_MAX || MAG_APPROX == MAG_APPROX_ABS_SUM
+				// Fast absolute value using branchless operations
+				int32_t real0_sign = real0 >> 15;  // Get sign bit (all 1s if negative, all 0s if positive)
+				int32_t imag0_sign = imag0 >> 15;
+				int32_t real1_sign = real1 >> 15;
+				int32_t imag1_sign = imag1 >> 15;
+				int32_t real2_sign = real2 >> 15;
+				int32_t imag2_sign = imag2 >> 15;
+				int32_t real3_sign = real3 >> 15;
+				int32_t imag3_sign = imag3 >> 15;
+				
+				// XOR with sign and subtract sign (branchless absolute value)
+				real0 = (real0 ^ real0_sign) - real0_sign;
+				imag0 = (imag0 ^ imag0_sign) - imag0_sign;
+				real1 = (real1 ^ real1_sign) - real1_sign;
+				imag1 = (imag1 ^ imag1_sign) - imag1_sign;
+				real2 = (real2 ^ real2_sign) - real2_sign;
+				imag2 = (imag2 ^ imag2_sign) - imag2_sign;
+				real3 = (real3 ^ real3_sign) - real3_sign;
+				imag3 = (imag3 ^ imag3_sign) - imag3_sign;
+			#endif
+			
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_ABS_MAX
+				// Calculate max for all 4 pairs using branchless operations
+				buf[i]   = real0 > imag0 ? real0 : imag0;
+				buf[i+1] = real1 > imag1 ? real1 : imag1;
+				buf[i+2] = real2 > imag2 ? real2 : imag2;
+				buf[i+3] = real3 > imag3 ? real3 : imag3;
+			#elif MAG_APPROX == MAG_APPROX_PURE_SUM || MAG_APPROX == MAG_APPROX_ABS_SUM
+				// Calculate sum for all 4 pairs
+				buf[i]   = real0 + imag0;
+				buf[i+1] = real1 + imag1;
+				buf[i+2] = real2 + imag2;
+				buf[i+3] = real3 + imag3;
+			#endif
+			
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_PURE_SUM
+				// Final absolute value using branchless operations
+				int32_t sign0 = buf[i] >> 15;
+				int32_t sign1 = buf[i+1] >> 15;
+				int32_t sign2 = buf[i+2] >> 15;
+				int32_t sign3 = buf[i+3] >> 15;
+				
+				buf[i]   = (buf[i]   ^ sign0) - sign0;
+				buf[i+1] = (buf[i+1] ^ sign1) - sign1;
+				buf[i+2] = (buf[i+2] ^ sign2) - sign2;
+				buf[i+3] = (buf[i+3] ^ sign3) - sign3;
+			#endif
+		}
+		
+		// Handle remaining samples
+		for (; i < SAMPLES_PER_MELVEC/2; i++)
+		{
+			q15_t real = buf_fft[2*i];
+			q15_t imag = buf_fft[2*i+1];
+			
+			#if MAG_APPROX == MAG_APPROX_ABS_MAX || MAG_APPROX == MAG_APPROX_ABS_SUM
+				// Branchless absolute value
+				int32_t real_sign = real >> 15;
+				int32_t imag_sign = imag >> 15;
+				real = (real ^ real_sign) - real_sign;
+				imag = (imag ^ imag_sign) - imag_sign;
+			#endif
+			
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_ABS_MAX
+				buf[i] = real > imag ? real : imag;
+			#elif MAG_APPROX == MAG_APPROX_PURE_SUM || MAG_APPROX == MAG_APPROX_ABS_SUM
+				buf[i] = real + imag;
+			#endif
+			
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_PURE_SUM
+				int32_t sign = buf[i] >> 15;
+				buf[i] = (buf[i] ^ sign) - sign;
+			#endif
+		}
+		
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Unrolled magnitude calculation");
 	#endif
 
 	// STEP 4:   Apply MEL transform

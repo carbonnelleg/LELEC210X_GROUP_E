@@ -32,6 +32,9 @@
 // Deactivate the need to use the button to trigger the system
 #define NO_BUTTON 0
 
+// Deactivate the loop unrolling optimizations that can make the compilation complain
+#define NO_LOOP_UNROLLING 0
+
 /*------------------------------------------------------------------------------
 * System Configuration
 *----------------------------------------------------------------------------*/
@@ -69,9 +72,9 @@
 #define N_MELVECS 20
 
 // Chain Optimizations (even further)
-#define CHAIN_SIGNAL_PREP_OPT_LEVEL 2 //  0 (No optimization), 1 (Optimization), 2 (Optimization 2)
-#define CHAIN_OPTIMIZE_MAGNITUDE 1 // 0 (No optimization), 1 (Optimization)
-#define CHAIN_OPTIMIZE_MEL_OPT 1 // 0 (No optimization), 1 (Optimization)
+#define CHAIN_SIGNAL_PREP_OPT_LEVEL 2 //  0 (No optimization), 1 (Optimization), 2 (Unrolled optimization)
+#define CHAIN_OPTIMIZE_MAGNITUDE 2 // 0 (No optimization), 1 (Optimization), 2 (Unrolled optimization)
+#define CHAIN_OPTIMIZE_MEL_OPT 1 // 0 (No other optimization), 1 (Unrolled optimization)
 
 // Magnitude Approximation
 #define MAG_APPROX_PURE_MAX 0 // Perf: 88.5  :  max(R, I)
@@ -100,7 +103,7 @@
 #define PERF_COUNT 1
 
 // Selective performance measurements (set to 0 to disable)
-#define MEASURE_CYCLES_FULL_SPECTROGRAM 0 // (Turns off all other signal processing measurements)
+#define MEASURE_CYCLES_FULL_SPECTROGRAM 1 // (Turns off all other signal processing measurements)
 
 #define MEASURE_CYCLES_SIGNAL_PROC_OP 1
 #define MEASURE_CYCLES_FFT 1
@@ -139,6 +142,22 @@
 #define DEBUGP 0
 #define PERF_COUNT 0
 #define ENABLE_UART 0
+#endif
+
+// Re-define the optimization macros if NO_LOOP_UNROLLING is set
+#if NO_LOOP_UNROLLING == 1
+    #if CHAIN_SIGNAL_PREP_OPT_LEVEL == 2
+        #undef CHAIN_SIGNAL_PREP_OPT_LEVEL
+        #define CHAIN_SIGNAL_PREP_OPT_LEVEL 1
+    #endif
+    #if CHAIN_OPTIMIZE_MAGNITUDE == 2
+        #undef CHAIN_OPTIMIZE_MAGNITUDE
+        #define CHAIN_OPTIMIZE_MAGNITUDE 1
+    #endif
+    #if CHAIN_OPTIMIZE_MEL_OPT == 1
+        #undef CHAIN_OPTIMIZE_MEL_OPT
+        #define CHAIN_OPTIMIZE_MEL_OPT 0
+    #endif
 #endif
 
 #endif /* INC_CONFIG_H_ */
