@@ -68,10 +68,9 @@
 #define MELVEC_LENGTH 20
 #define N_MELVECS 20
 
-// Optimize chain computations
-#define CHAIN_NO_OPT 0
-#define CHAIN_OPT 1
-#define CHAIN_OPT_MODE CHAIN_OPT  // Select either CHAIN_NO_OPT or CHAIN_OPT
+// Chain Optimizations
+#define CHAIN_SIGNAL_PREP_OPT_LEVEL 1 //  0 (No optimization), 1 (Optimization)
+#define CHAIN_OPTIMIZE_MAGNITUDE 1 // 0 (No optimization), 1 (Optimization)
 
 // Mel Processing Mode
 #define MEL_MODE_MATRIX 0     // Performance: 20900 cycles per vector
@@ -82,7 +81,7 @@
 #define THRESHOLD_HARD_FULL 0
 #define THRESHOLD_HARD_PER_MELVEC 1
 #define THRESHOLD_LOOSE 2
-#define USE_THRESHOLD 1 // Enable/disable thresholding
+#define USE_THRESHOLD 0 // Enable/disable thresholding
 #define THRESHOLD_VALUE 0x1 // Threshold value for the Mel vectors
 #define THRESHOLD_MODE THRESHOLD_HARD_FULL // Select either THRESHOLD_HARD_FULL, THRESHOLD_HARD_PER_MELVEC, or THRESHOLD_LOOSE
 
@@ -93,7 +92,7 @@
 #define PERF_COUNT 1
 
 // Selective performance measurements (set to 0 to disable)
-#define MEASURE_CYCLES_FULL_SPECTROGRAM 0 // (Turns off all other signal processing measurements)
+#define MEASURE_CYCLES_FULL_SPECTROGRAM 1 // (Turns off all other signal processing measurements)
 
 #define MEASURE_CYCLES_SIGNAL_PROC_OP 1
 #define MEASURE_CYCLES_FFT 1

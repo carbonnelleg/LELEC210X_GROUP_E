@@ -43,3 +43,13 @@ Even more Opti
 [2025-03-09 20:55:41] INFO    : >>[PERF] Step 5 - Mel filter bank 4244 cycles.
 
 Total cycle count = 41,782 cycles (26.3% reduction)
+
+With proper square root magnitude
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 0 & 1 - Shift + DC Removal + Windowing 6187 cycles.
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 2.1 - RFFT INIT 90 cycles.
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 2.2 - RFFT 23940 cycles.
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 3 - Magnitude & Find max 7733 cycles. # A 3k increase
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 4 - Normalize magnitude spectrum 2601 cycles.
+[2025-03-09 21:05:37] INFO    : >>[PERF] Step 5 - Mel filter bank 4284 cycles.
+
+Total cycle count = 44,835 cycles (20.9% reduction)

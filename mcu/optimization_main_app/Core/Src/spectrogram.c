@@ -81,149 +81,77 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
     }
 }
 
-#if CHAIN_OPT_MODE == CHAIN_OPT
-// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
-void Spectrogram_Format(q15_t *buf)
-{
-    // STEP 0 & 1: Combine 0.1 (Increase fixed-point scale) + 0.2 (Remove DC) + 1 (Windowing)
-
-    // Original plan:
-    //  - Shift left by 3 to go from [0..4095] (12-bit) up into [0..32767] (Q15).
-    //  - Then subtract 2^14 = 16384 to recenter around zero.
-	// - Multiply by Hamming window.
-    // Instead, do both in one pass:
-    START_CYCLE_COUNT_SIGNAL_PROC_OP();
-    for (int i = 0; i < SAMPLES_PER_MELVEC; i++)
+// Prepare the signal for the spectrogram computation
+#if CHAIN_SIGNAL_PREP_OPT_LEVEL == 0
+	// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
+	void Spectrogram_Format(q15_t *buf)
 	{
-		// shift + DC
-		q31_t shifted = ((q31_t)buf[i] << 3) - (1 << 14);
+		// STEP 0.1 : Increase fixed-point scale
+		//            --> Pointwise shift
+		//            Complexity: O(N)
+		//            Number of cycles: <TODO>
 
-		// multiply by Hamming
-		q31_t w = (shifted * hamming_window[i]) >> 15;
+		// The output of the ADC is stored in an unsigned 12-bit format, so buf[i] is in [0 , 2**12 - 1]
+		// In order to better use the scale of the signed 16-bit format (1 bit of sign and 15 integer bits), we can multiply by 2**(15-12) = 2**3
+		// That way, the value of buf[i] is in [0 , 2**15 - 1]
 
-		// saturate to Q15
-		buf[i] = (q15_t)__SSAT(w, 16);
-	}
-    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0 & 1 - Shift + DC Removal + Windowing");
-}
+		// /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so are more efficient.
+		// Here we should shift left by 3.
 
-// Compute spectrogram of samples and transform into MEL vectors.
-void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
-{
-    // STEP 2: Real FFT
-	START_CYCLE_COUNT_FFT();
-    arm_rfft_instance_q15 rfft_inst;
-    // 0 => FFT, 1 => IFFT // 1 => bitReverse
-    arm_rfft_init_q15(&rfft_inst, SAMPLES_PER_MELVEC, 0, 1);
-	STOP_CYCLE_COUNT_FFT("Step 2.1 - RFFT INIT");
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.1 - Increase fixed-point scale");
 
-    START_CYCLE_COUNT_FFT();
-    arm_rfft_q15(&rfft_inst, buf, buf_fft);
-    STOP_CYCLE_COUNT_FFT("Step 2.2 - RFFT");
+		// STEP 0.2 : Remove DC Component
+		//            --> Pointwise substract
+		//            Complexity: O(N)
+		//            Number of cycles: <TODO>
 
-    // STEP 3: Compute magnitude and find max in a single pass
-    START_CYCLE_COUNT_SIGNAL_PROC_OP();
-    q15_t vmax = 0;
+		// Since we use a signed representation, we should now center the value around zero, we can do this by substracting 2**14.
+		// Now the value of buf[i] is in [-2**14 , 2**14 - 1]
 
-    for (int i = 0; i < SAMPLES_PER_MELVEC / 2; i++)
-    {
-		// Compute magnitude
-		q31_t real = buf_fft[2 * i];
-		q31_t imag = buf_fft[2 * i + 1];
-		q31_t mag = __QADD(__QADD(__SMUAD(real, real), __SMUAD(imag, imag)), 0); // Q31
-
-		// Find max
-		if (mag > vmax)
-		{
-			vmax = mag;
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		for(uint16_t i=0; i < SAMPLES_PER_MELVEC; i++) { // Remove DC component
+			buf[i] -= (1 << 14);
 		}
-
-		// Store magnitude in buf
-		buf[i] = (q15_t)__SSAT(mag, 16);
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.2 - Remove DC Component");
 	}
-    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Magnitude & Find max");
+#elif CHAIN_SIGNAL_PREP_OPT_LEVEL == 1
+	// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
+	void Spectrogram_Format(q15_t *buf)
+	{
+		// STEP 0 & 1: Combine 0.1 (Increase fixed-point scale) + 0.2 (Remove DC) + 1 (Windowing)
 
-    // STEP 4: Normalize
-    START_CYCLE_COUNT_SIGNAL_PROC_OP();
-    if (1)
-    {
-        // Manual reciprocal in Q15:
-        //  1.0 in Q15 is 0x7FFF ~ 32767
-        //  We'll do: (32767 << 15) / vmax = Q15 reciprocal
-        //  Then multiply each sample by this reciprocal >> 15
-        q31_t reciprocal = (((q31_t)0x7FFF) << 15) / (q31_t)vmax; 
-        q15_t invVmax = (q15_t)__SSAT(reciprocal, 16); // saturate to Q15
+		// Original plan:
+		//  - Shift left by 3 to go from [0..4095] (12-bit) up into [0..32767] (Q15).
+		//  - Then subtract 2^14 = 16384 to recenter around zero.
+		// - Multiply by Hamming window.
+		// Instead, do both in one pass:
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		for (int i = 0; i < SAMPLES_PER_MELVEC; i++)
+		{
+			// shift + DC
+			buf[i] = ((q31_t)buf[i] << 3) - (1 << 14);
 
-        for (int i = 0; i < SAMPLES_PER_MELVEC / 2; i++)
-        {
-            q31_t tmp = ((q31_t)buf[i] * (q31_t)invVmax) >> 15; 
-            buf[i] = (q15_t)__SSAT(tmp, 16);
-        }
-    }
-    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 4 - Normalize magnitude spectrum");
-
-    // STEP 5: Mel transform
-    START_CYCLE_COUNT_MEL();
-#if MEL_MODE == MEL_MODE_FILTERBANK
-    // e.g., mel_filter_apply(buf, melvec, SAMPLES_PER_MELVEC/2, MELVEC_LENGTH);
-    mel_filter_apply(buf, melvec, SAMPLES_PER_MELVEC, MELVEC_LENGTH);
-    STOP_CYCLE_COUNT_MEL("Step 5 - Mel filter bank");
-#else
-    arm_matrix_instance_q15 hz2mel_inst, fftmag_inst, melvec_inst;
-    arm_mat_init_q15(&hz2mel_inst, MELVEC_LENGTH, SAMPLES_PER_MELVEC/2, hz2mel_mat);
-    arm_mat_init_q15(&fftmag_inst, SAMPLES_PER_MELVEC/2, 1, buf);
-    arm_mat_init_q15(&melvec_inst, MELVEC_LENGTH, 1, melvec);
-
-    arm_mat_mult_fast_q15(&hz2mel_inst, &fftmag_inst, &melvec_inst, buf_tmp);
-    STOP_CYCLE_COUNT_MEL("Step 5 - Mel matrix");
+			// multiply by Hamming
+			buf[i] = (q15_t)__SSAT(((q31_t)buf[i] * hamming_window[i]) >> 15, 16);
+		}
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0 & 1 - Shift + DC Removal + Windowing");
+	}
 #endif
-}
-
-#elif CHAIN_OPT_MODE == CHAIN_NO_OPT
-// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
-void Spectrogram_Format(q15_t *buf)
-{
-	// STEP 0.1 : Increase fixed-point scale
-	//            --> Pointwise shift
-	//            Complexity: O(N)
-	//            Number of cycles: <TODO>
-
-	// The output of the ADC is stored in an unsigned 12-bit format, so buf[i] is in [0 , 2**12 - 1]
-	// In order to better use the scale of the signed 16-bit format (1 bit of sign and 15 integer bits), we can multiply by 2**(15-12) = 2**3
-	// That way, the value of buf[i] is in [0 , 2**15 - 1]
-
-	// /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so are more efficient.
-	// Here we should shift left by 3.
-
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.1 - Increase fixed-point scale");
-
-	// STEP 0.2 : Remove DC Component
-	//            --> Pointwise substract
-	//            Complexity: O(N)
-	//            Number of cycles: <TODO>
-
-	// Since we use a signed representation, we should now center the value around zero, we can do this by substracting 2**14.
-	// Now the value of buf[i] is in [-2**14 , 2**14 - 1]
-
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	for(uint16_t i=0; i < SAMPLES_PER_MELVEC; i++) { // Remove DC component
-		buf[i] -= (1 << 14);
-	}
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0.2 - Remove DC Component");
-}
 
 // Compute spectrogram of samples and transform into MEL vectors.
 void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 {
-	// STEP 1  : Windowing of input samples
-	//           --> Pointwise product
-	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	arm_mult_q15(samples, hamming_window, buf, SAMPLES_PER_MELVEC);
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 1 - Windowing (Hamming)");
+	#if CHAIN_SIGNAL_PREP_OPT_LEVEL == 0
+		// STEP 1  : Windowing of input samples
+		//           --> Pointwise product
+		//           Complexity: O(N)
+		//           Number of cycles: <TODO>
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		arm_mult_q15(samples, hamming_window, buf, SAMPLES_PER_MELVEC);
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 1 - Windowing (Hamming)");
+	#endif
 
 	// STEP 2  : Discrete Fourier Transform
 	//           --> In-place Fast Fourier Transform (FFT) on a real signal
@@ -231,61 +159,91 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	//           Complexity: O(Nlog(N))
 	//           Number of cycles: <TODO>
 
+	#if CHAIN_SIGNAL_PREP_OPT_LEVEL == 0
+		#define FFT_BUFFER_TO_COMUTE buf
+	#else
+		#define FFT_BUFFER_TO_COMUTE samples
+	#endif
+
 	START_CYCLE_COUNT_FFT();
 
 	// Since the FFT is a recursive algorithm, the values are rescaled in the function to ensure that overflow cannot happen.
 	arm_rfft_instance_q15 rfft_inst;
 	arm_rfft_init_q15(&rfft_inst, SAMPLES_PER_MELVEC, 0, 1);
-	arm_rfft_q15(&rfft_inst, buf, buf_fft);
+	arm_rfft_q15(&rfft_inst, FFT_BUFFER_TO_COMUTE, buf_fft);
 
 	STOP_CYCLE_COUNT_FFT("Step 2 - FFT");
 
-	// STEP 3  : Compute the complex magnitude of the FFT
-	//           Because the FFT can output a great proportion of very small values,
-	//           we should rescale all values by their maximum to avoid loss of precision when computing the complex magnitude
-	//           In this implementation, we use integer division and multiplication to rescale values, which are very costly.
 
-	// STEP 3.1: Find the extremum value (maximum of absolute values)
-	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	#if CHAIN_OPTIMIZE_MAGNITUDE == 0
+		// STEP 3  : Compute the complex magnitude of the FFT
+		//           Because the FFT can output a great proportion of very small values,
+		//           we should rescale all values by their maximum to avoid loss of precision when computing the complex magnitude
+		//           In this implementation, we use integer division and multiplication to rescale values, which are very costly.
 
-	q15_t vmax;
-	uint32_t pIndex=0;
+		// STEP 3.1: Find the extremum value (maximum of absolute values)
+		//           Complexity: O(N)
+		//           Number of cycles: <TODO>
 
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	arm_absmax_q15(buf_fft, SAMPLES_PER_MELVEC, &vmax, &pIndex);
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.1 - Find the extremum value");
+		q15_t vmax;
+		uint32_t pIndex=0;
 
-	// STEP 3.2: Normalize the vector - Dynamic range increase
-	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		arm_absmax_q15(buf_fft, SAMPLES_PER_MELVEC, &vmax, &pIndex);
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.1 - Find the extremum value");
 
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	for (int i=0; i < SAMPLES_PER_MELVEC; i++) // We don't use the second half of the symmetric spectrum
-	{
-		buf[i] = (q15_t) (((q31_t) buf_fft[i] << 15) /((q31_t)vmax));
-	}
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.2 - Normalize the vector");
+		// STEP 3.2: Normalize the vector - Dynamic range increase
+		//           Complexity: O(N)
+		//           Number of cycles: <TODO>
 
-	// STEP 3.3: Compute the complex magnitude
-	//           --> The output buffer is now two times smaller because (real|imag) --> (mag)
-	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		for (int i=0; i < SAMPLES_PER_MELVEC; i++) // We don't use the second half of the symmetric spectrum
+		{
+			buf[i] = (q15_t) (((q31_t) buf_fft[i] << 15) /((q31_t)vmax));
+		}
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.2 - Normalize the vector");
 
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	arm_cmplx_mag_q15(buf, buf, SAMPLES_PER_MELVEC/2);
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.3 - Compute the complex magnitude");
+		// STEP 3.3: Compute the complex magnitude
+		//           --> The output buffer is now two times smaller because (real|imag) --> (mag)
+		//           Complexity: O(N)
+		//           Number of cycles: <TODO>
 
-	// STEP 3.4: Denormalize the vector
-	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		arm_cmplx_mag_q15(buf, buf, SAMPLES_PER_MELVEC/2);
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.3 - Compute the complex magnitude");
 
-	START_CYCLE_COUNT_SIGNAL_PROC_OP();
-	for (int i=0; i < SAMPLES_PER_MELVEC/2; i++)
-	{
-		buf[i] = (q15_t) ((((q31_t) buf[i]) * ((q31_t) vmax) ) >> 15 );
-	}
-	STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.4 - Denormalize the vector");
+		// STEP 3.4: Denormalize the vector
+		//           Complexity: O(N)
+		//           Number of cycles: <TODO>
+
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		for (int i=0; i < SAMPLES_PER_MELVEC/2; i++)
+		{
+			buf[i] = (q15_t) ((((q31_t) buf[i]) * ((q31_t) vmax) ) >> 15 );
+		}
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.4 - Denormalize the vector");
+
+	#elif CHAIN_OPTIMIZE_MAGNITUDE == 1
+		// STEP 3: Compute the complex magnitude of the FFT using a approximation using the maximum value
+		// This is sped up using SIMD instructions to compute the complex magnitude of the FFT
+
+		START_CYCLE_COUNT_SIGNAL_PROC_OP();
+		for (int i = 0; i < SAMPLES_PER_MELVEC/2; i++)
+		{
+			// Approximate the magnitude using the maximum value
+			// Get real and imaginary parts
+			q15_t real = buf_fft[2*i];
+			q15_t imag = buf_fft[2*i+1];
+			
+			// Get the maximum values
+			buf[i] = real > imag ? real : imag;
+
+			// Get the absolute value
+			buf[i] = buf[i] > 0 ? buf[i] : -buf[i];
+		}
+		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Compute the approximate complex magnitude");
+
+	#endif
 
 	// STEP 4:   Apply MEL transform
 	//           --> Fast Matrix Multiplication
@@ -316,5 +274,3 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	#endif
 	
 }
-
-#endif // CHAIN_OPT_MODE
