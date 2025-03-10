@@ -99,7 +99,7 @@
 #define PERF_COUNT 1
 
 // Selective performance measurements (set to 0 to disable)
-#define MEASURE_CYCLES_FULL_SPECTROGRAM 1 // (Turns off all other signal processing measurements)
+#define MEASURE_CYCLES_FULL_SPECTROGRAM 0 // (Turns off all other signal processing measurements)
 
 #define MEASURE_CYCLES_SIGNAL_PROC_OP 1
 #define MEASURE_CYCLES_FFT 1

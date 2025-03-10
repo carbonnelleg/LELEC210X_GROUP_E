@@ -134,10 +134,51 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
 			buf[i] = ((q31_t)buf[i] << 3) - (1 << 14);
 
 			// multiply by Hamming
-			buf[i] = (q15_t)__SSAT(((q31_t)buf[i] * hamming_window[i]) >> 15, 16);
+			buf[i] = (q15_t)(((q31_t)buf[i] * (q31_t)hamming_window[i]) >> 15);
 		}
 		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0 & 1 - Shift + DC Removal + Windowing");
 	}
+#elif CHAIN_SIGNAL_PREP_OPT_LEVEL == 2
+void Spectrogram_Format(q15_t *buf)
+{
+    START_CYCLE_COUNT_SIGNAL_PROC_OP();
+    
+    // Pre-compute constants
+    const q31_t dc_offset = (1 << 14);
+    int i = 0;
+    
+    // Process 4 samples at once (loop unrolling)
+    for (; i <= SAMPLES_PER_MELVEC - 4; i += 4)
+    {
+        // Load 4 samples to registers
+        register q31_t s0 = (q31_t)buf[i];
+        register q31_t s1 = (q31_t)buf[i+1];
+        register q31_t s2 = (q31_t)buf[i+2];
+        register q31_t s3 = (q31_t)buf[i+3];
+        
+        // Shift + DC remove
+        s0 = (s0 << 3) - dc_offset;
+        s1 = (s1 << 3) - dc_offset;
+        s2 = (s2 << 3) - dc_offset;
+        s3 = (s3 << 3) - dc_offset;
+        
+        // Multiply by Hamming
+        buf[i]   = (q15_t)__SSAT((s0 * (q31_t)hamming_window[i]) >> 15, 16);
+        buf[i+1] = (q15_t)__SSAT((s1 * (q31_t)hamming_window[i+1]) >> 15, 16);
+        buf[i+2] = (q15_t)__SSAT((s2 * (q31_t)hamming_window[i+2]) >> 15, 16);
+        buf[i+3] = (q15_t)__SSAT((s3 * (q31_t)hamming_window[i+3]) >> 15, 16);
+    }
+    
+    // Handle remaining samples
+    for (; i < SAMPLES_PER_MELVEC; i++)
+    {
+        q31_t sample = (q31_t)buf[i];
+        sample = (sample << 3) - dc_offset;
+        buf[i] = (q15_t)__SSAT((sample * (q31_t)hamming_window[i]) >> 15, 16);
+    }
+    
+    STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 0 & 1 - Shift + DC Removal + Windowing");
+}
 #endif
 
 // Compute spectrogram of samples and transform into MEL vectors.
@@ -175,7 +216,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	STOP_CYCLE_COUNT_FFT("Step 2 - FFT");
 
 
-	#if CHAIN_OPTIMIZE_MAGNITUDE == 1
+	#if CHAIN_OPTIMIZE_MAGNITUDE == 0
 		// STEP 3  : Compute the complex magnitude of the FFT
 		//           Because the FFT can output a great proportion of very small values,
 		//           we should rescale all values by their maximum to avoid loss of precision when computing the complex magnitude
@@ -223,7 +264,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 		}
 		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.4 - Denormalize the vector");
 
-	#elif CHAIN_OPTIMIZE_MAGNITUDE == 0
+	#elif CHAIN_OPTIMIZE_MAGNITUDE == 1
 		// STEP 3: Compute the complex magnitude of the FFT using a approximation using the maximum value
 		// This is sped up using SIMD instructions to compute the complex magnitude of the FFT
 
@@ -236,22 +277,22 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 			q15_t imag = buf_fft[2*i+1];
 
 			// Get the absolute value of the real and imaginary parts
-			#if MAG_APPROX == MAG_APPROX_ABS_MAX or MAG_APPROX == MAG_APPROX_ABS_SUM
+			#if MAG_APPROX == MAG_APPROX_ABS_MAX || MAG_APPROX == MAG_APPROX_ABS_SUM
 				real = real > 0 ? real : -real; // abs(real)
 				imag = imag > 0 ? imag : -imag; // abs(imag)
 			#endif
 
 			// Get the maximum values
-			#if   MAG_APPROX == MAG_APPROX_PURE_MAX or MAG_APPROX == MAG_APPROX_ABS_MAX
+			#if   MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_ABS_MAX
 				// Get the maximum values
 				buf[i] = real > imag ? real : imag; // max(real, imag)
-			#elif MAG_APPROX == MAG_APPROX_PURE_SUM or MAG_APPROX == MAG_APPROX_ABS_SUM
+			#elif MAG_APPROX == MAG_APPROX_PURE_SUM || MAG_APPROX == MAG_APPROX_ABS_SUM
 				// Get the absolute sum
 				buf[i] = real + imag;  // real + imag
 			#endif
 
 			// Get the absolute value (so its always positive)
-			#if MAG_APPROX == MAG_APPROX_PURE_MAX or MAG_APPROX == MAG_APPROX_PURE_SUM
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_PURE_SUM
 				buf[i] = buf[i] > 0 ? buf[i] : -buf[i]; // abs(buf[i])
 			#endif
 		}
