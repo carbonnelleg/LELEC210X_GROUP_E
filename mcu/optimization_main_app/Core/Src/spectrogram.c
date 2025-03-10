@@ -61,6 +61,7 @@ q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed 
 q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]; // Intermediate buffer for arm_mat_mult_fast_q15
 #endif
 
+#if CHAIN_OPTIMIZE_MEL_OPT == 0
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
 	// Pre-check all triangles once (cache locality)
     for (size_t i = 0; i < mel_len; i++) {
@@ -80,6 +81,46 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
 		mel_array[i] = clip_q63_to_q15(mel_result);
     }
 }
+#elif CHAIN_OPTIMIZE_MEL_OPT == 1
+void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
+	// Process 4 triangles at once through loop unrolling, and register variables
+	for (size_t i = 0; i < mel_len; i += 4) {
+		// Load the Mel triangle values
+		q15_t* mel_values_0 = mel_triangles[i].values;
+		q15_t* mel_values_1 = mel_triangles[i+1].values;
+		q15_t* mel_values_2 = mel_triangles[i+2].values;
+		q15_t* mel_values_3 = mel_triangles[i+3].values;
+
+		// Load the FFT samples
+		q15_t* fft_samples_0 = &fft_array[mel_triangles[i].idx_offset];
+		q15_t* fft_samples_1 = &fft_array[mel_triangles[i+1].idx_offset];
+		q15_t* fft_samples_2 = &fft_array[mel_triangles[i+2].idx_offset];
+		q15_t* fft_samples_3 = &fft_array[mel_triangles[i+3].idx_offset];
+
+		// Compute the dot product of the FFT samples and the Mel triangle
+		q63_t mel_result_0, mel_result_1, mel_result_2, mel_result_3;
+		arm_dot_prod_q15(fft_samples_0, mel_values_0, mel_triangles[i].triangle_len, &mel_result_0);
+		arm_dot_prod_q15(fft_samples_1, mel_values_1, mel_triangles[i+1].triangle_len, &mel_result_1);
+		arm_dot_prod_q15(fft_samples_2, mel_values_2, mel_triangles[i+2].triangle_len, &mel_result_2);
+		arm_dot_prod_q15(fft_samples_3, mel_values_3, mel_triangles[i+3].triangle_len, &mel_result_3);
+
+		// Store the result in the Mel array
+		mel_array[i]   = clip_q63_to_q15(mel_result_0);
+		mel_array[i+1] = clip_q63_to_q15(mel_result_1);
+		mel_array[i+2] = clip_q63_to_q15(mel_result_2);
+		mel_array[i+3] = clip_q63_to_q15(mel_result_3);
+	}
+
+	// Handle remaining triangles
+	for (size_t i = mel_len & ~3; i < mel_len; i++) {
+		q15_t* mel_values = mel_triangles[i].values;
+		q15_t* fft_samples = &fft_array[mel_triangles[i].idx_offset];
+		q63_t mel_result;
+		arm_dot_prod_q15(fft_samples, mel_values, mel_triangles[i].triangle_len, &mel_result);
+		mel_array[i] = clip_q63_to_q15(mel_result);
+	}
+}
+#endif
 
 // Prepare the signal for the spectrogram computation
 #if CHAIN_SIGNAL_PREP_OPT_LEVEL == 0

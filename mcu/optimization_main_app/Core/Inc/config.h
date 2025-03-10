@@ -68,9 +68,10 @@
 #define MELVEC_LENGTH 20
 #define N_MELVECS 20
 
-// Chain Optimizations
-#define CHAIN_SIGNAL_PREP_OPT_LEVEL 1 //  0 (No optimization), 1 (Optimization)
+// Chain Optimizations (even further)
+#define CHAIN_SIGNAL_PREP_OPT_LEVEL 2 //  0 (No optimization), 1 (Optimization), 2 (Optimization 2)
 #define CHAIN_OPTIMIZE_MAGNITUDE 1 // 0 (No optimization), 1 (Optimization)
+#define CHAIN_OPTIMIZE_MEL_OPT 1 // 0 (No optimization), 1 (Optimization)
 
 // Magnitude Approximation
 #define MAG_APPROX_PURE_MAX 0 // Perf: 88.5  :  max(R, I)
