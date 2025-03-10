@@ -175,7 +175,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	STOP_CYCLE_COUNT_FFT("Step 2 - FFT");
 
 
-	#if CHAIN_OPTIMIZE_MAGNITUDE == 0
+	#if CHAIN_OPTIMIZE_MAGNITUDE == 1
 		// STEP 3  : Compute the complex magnitude of the FFT
 		//           Because the FFT can output a great proportion of very small values,
 		//           we should rescale all values by their maximum to avoid loss of precision when computing the complex magnitude
@@ -223,7 +223,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 		}
 		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3.4 - Denormalize the vector");
 
-	#elif CHAIN_OPTIMIZE_MAGNITUDE == 1
+	#elif CHAIN_OPTIMIZE_MAGNITUDE == 0
 		// STEP 3: Compute the complex magnitude of the FFT using a approximation using the maximum value
 		// This is sped up using SIMD instructions to compute the complex magnitude of the FFT
 
@@ -234,12 +234,26 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 			// Get real and imaginary parts
 			q15_t real = buf_fft[2*i];
 			q15_t imag = buf_fft[2*i+1];
-			
-			// Get the maximum values
-			buf[i] = real > imag ? real : imag;
 
-			// Get the absolute value
-			buf[i] = buf[i] > 0 ? buf[i] : -buf[i];
+			// Get the absolute value of the real and imaginary parts
+			#if MAG_APPROX == MAG_APPROX_ABS_MAX or MAG_APPROX == MAG_APPROX_ABS_SUM
+				real = real > 0 ? real : -real; // abs(real)
+				imag = imag > 0 ? imag : -imag; // abs(imag)
+			#endif
+
+			// Get the maximum values
+			#if   MAG_APPROX == MAG_APPROX_PURE_MAX or MAG_APPROX == MAG_APPROX_ABS_MAX
+				// Get the maximum values
+				buf[i] = real > imag ? real : imag; // max(real, imag)
+			#elif MAG_APPROX == MAG_APPROX_PURE_SUM or MAG_APPROX == MAG_APPROX_ABS_SUM
+				// Get the absolute sum
+				buf[i] = real + imag;  // real + imag
+			#endif
+
+			// Get the absolute value (so its always positive)
+			#if MAG_APPROX == MAG_APPROX_PURE_MAX or MAG_APPROX == MAG_APPROX_PURE_SUM
+				buf[i] = buf[i] > 0 ? buf[i] : -buf[i]; // abs(buf[i])
+			#endif
 		}
 		STOP_CYCLE_COUNT_SIGNAL_PROC_OP("Step 3 - Compute the approximate complex magnitude");
 

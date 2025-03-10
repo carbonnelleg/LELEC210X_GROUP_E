@@ -72,6 +72,13 @@
 #define CHAIN_SIGNAL_PREP_OPT_LEVEL 1 //  0 (No optimization), 1 (Optimization)
 #define CHAIN_OPTIMIZE_MAGNITUDE 1 // 0 (No optimization), 1 (Optimization)
 
+// Magnitude Approximation
+#define MAG_APPROX_PURE_MAX 0 // Perf: 88.5  :  max(R, I)
+#define MAG_APPROX_ABS_SUM 1 // Perf: 88.6   :  abs(R) + abs(I)
+#define MAG_APPROX_PURE_SUM 2 // Perf: 84.0  :  R + I
+#define MAG_APPROX_ABS_MAX 3 // Perf: 83.7   :  max(abs(R), abs(I))
+#define MAG_APPROX MAG_APPROX_PURE_MAX // Select either MAG_APPROX_PURE_MAX, MAG_APPROX_ABS_SUM, MAG_APPROX_PURE_SUM, or MAG_APPROX_ABS_MAX
+
 // Mel Processing Mode
 #define MEL_MODE_MATRIX 0     // Performance: 20900 cycles per vector
 #define MEL_MODE_FILTERBANK 1 // Performance: 4246 cycles per vector
