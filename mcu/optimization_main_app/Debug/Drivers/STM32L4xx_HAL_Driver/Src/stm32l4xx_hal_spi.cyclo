@@ -1,5 +1,5 @@
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4015:26:SPI_WaitFifoStateUntilTimeout.constprop	10
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4131:26:SPI_EndRxTxTransaction	18
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4015:26:SPI_WaitFifoStateUntilTimeout.constprop	17
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4131:26:SPI_EndRxTxTransaction	32
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:3946:26:SPI_WaitFlagStateUntilTimeout.constprop	8
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4131:26:SPI_EndRxTxTransaction.constprop	10
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:4391:13:SPI_AbortTx_ISR	10
@@ -10,7 +10,7 @@
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:491:19:HAL_SPI_DeInit	2
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:823:19:HAL_SPI_Transmit	32
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1252:19:HAL_SPI_TransmitReceive	49
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1009:19:HAL_SPI_Receive	45
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1009:19:HAL_SPI_Receive	52
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1600:19:HAL_SPI_Transmit_IT	7
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1786:19:HAL_SPI_TransmitReceive_IT	13
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c:1682:19:HAL_SPI_Receive_IT	10
