@@ -212,41 +212,72 @@ char threshold_mel_vectors() {
     // Check the threshold
     #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the sum of all mel vectors
 		q31_t total_sum = 0;
-		q15_t temp_buf[MELVEC_LENGTH];
-		
+		// Unrolled loop for better performance for each mel vector	
 		for (size_t i = 0; i < N_MELVECS; i++) {
-			// Copy and get absolute values
-			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
-			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
-			// Sum the absolute values
-			for (size_t j = 0; j < MELVEC_LENGTH; j++) {
-				total_sum += temp_buf[j];
+			// Unrolled inner loop - process 4 elements at once
+			size_t j = 0;
+			for (; j <= MELVEC_LENGTH - 4; j += 4) {
+				// Load 4 values at once for better pipelining
+				q15_t val0 = mel_vectors[i][j];
+				q15_t val1 = mel_vectors[i][j+1];
+				q15_t val2 = mel_vectors[i][j+2];
+				q15_t val3 = mel_vectors[i][j+3];
+				
+				// Calculate absolute values using branchless operations
+				// This avoids branch prediction failures
+				total_sum += ((val0 ^ (val0 >> 15)) - (val0 >> 15)) +
+							((val1 ^ (val1 >> 15)) - (val1 >> 15)) +
+							((val2 ^ (val2 >> 15)) - (val2 >> 15)) +
+							((val3 ^ (val3 >> 15)) - (val3 >> 15));
 			}
-			// If the threshold is reached, return
-			if (total_sum > corrected_threshold) {
+			
+			// Handle remaining elements
+			for (; j < MELVEC_LENGTH; j++) {
+				q15_t val = mel_vectors[i][j];
+				total_sum += (val ^ (val >> 15)) - (val >> 15); // Branchless absolute value
+			}
+			
+			// Early threshold check every 2 vectors
+			if ((i & 0x1) == 0x1 && total_sum > corrected_threshold) {
 				STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
 				return 1;
 			}
 		}
-        STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
+		STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
+		// Final threshold check
+		if (total_sum > corrected_threshold) {
+			return 1;
+		}
     #elif THRESHOLD_MODE == THRESHOLD_HARD_PER_MELVEC // Threshold on the mean of each mel vector
-		q15_t temp_buf[MELVEC_LENGTH];
-		for (size_t i = 0; i < N_MELVECS; i++) {
-			q31_t block_sum = 0;
-			// Copy and get absolute values
-			arm_copy_q15(mel_vectors[i], temp_buf, MELVEC_LENGTH);
-			arm_abs_q15(temp_buf, temp_buf, MELVEC_LENGTH);
-			// Sum the absolute values
-			for (size_t j = 0; j < MELVEC_LENGTH; j++) {
-				block_sum += temp_buf[j];
+	// Unrolled loop for better performance for each mel vector	
+	for (size_t i=0; i < N_MELVECS; i++) {
+			q31_t sum = 0;
+			size_t j = 0;
+			for (; j < MELVEC_LENGTH - 4; j += 4) {
+				q15_t val0 = mel_vectors[i][j];
+				q15_t val1 = mel_vectors[i][j+1];
+				q15_t val2 = mel_vectors[i][j+2];
+				q15_t val3 = mel_vectors[i][j+3];
+
+				sum +=  ((val0 ^ (val0 >> 15)) - (val0 >> 15)) +
+						((val1 ^ (val1 >> 15)) - (val1 >> 15)) +
+						((val2 ^ (val2 >> 15)) - (val2 >> 15)) +
+						((val3 ^ (val3 >> 15)) - (val3 >> 15));
 			}
-			// If the threshold is reached, return
-			if (block_sum > corrected_threshold) {
+
+			// Handle remaining elements
+			for (; j < MELVEC_LENGTH; j++) {
+				q15_t val = mel_vectors[i][j];
+				sum += (val ^ (val >> 15)) - (val >> 15); // Branchless absolute value
+			}
+
+			// Threshold check
+			if (sum > corrected_threshold) {
 				STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
 				return 1;
 			}
-		}
-        STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
+		}		
+		STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
     #elif THRESHOLD_MODE == THRESHOLD_LOOSE // Threshold on the maximum absolute value of each mel vector
 		for (size_t i=0; i < N_MELVECS; i++) {
 			// Use the arm_absmax_q15 function to find the maximum absolute value

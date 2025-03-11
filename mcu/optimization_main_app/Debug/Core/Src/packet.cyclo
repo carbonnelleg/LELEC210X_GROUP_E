@@ -1,3 +1,3 @@
 ../Core/Src/packet.c:38:6:tag_cbc_mac	20
-../Core/Src/packet.c:74:6:tag_cbc_mac_hardware	5
-../Core/Src/packet.c:128:5:make_packet	1
+../Core/Src/packet.c:74:6:tag_cbc_mac_hardware	3
+../Core/Src/packet.c:106:5:make_packet	3
