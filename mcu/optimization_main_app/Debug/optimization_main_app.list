@@ -31,27 +31,27 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  13 .debug_abbrev 00006d17  00000000  00000000  0005972e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_loclists 0001b2fc  00000000  00000000  00060445  2**0
+ 14 .debug_loclists 0001b324  00000000  00000000  00060445  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_aranges 000017c0  00000000  00000000  0007b748  2**3
+ 15 .debug_aranges 000017c0  00000000  00000000  0007b770  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_rnglists 00005edd  00000000  00000000  0007cf08  2**0
+ 16 .debug_rnglists 00005edd  00000000  00000000  0007cf30  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  00030da3  00000000  00000000  00082de5  2**0
+ 17 .debug_macro  00030da3  00000000  00000000  00082e0d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   00048b15  00000000  00000000  000b3b88  2**0
+ 18 .debug_line   00048b0e  00000000  00000000  000b3bb0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    00123b02  00000000  00000000  000fc69d  2**0
+ 19 .debug_str    00123b02  00000000  00000000  000fc6be  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      000000bc  00000000  00000000  0022019f  2**0
+ 20 .comment      000000bc  00000000  00000000  002201c0  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00004f88  00000000  00000000  0022025c  2**2
+ 21 .debug_frame  00004f88  00000000  00000000  0022027c  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 00000065  00000000  00000000  002251e4  2**0
+ 22 .debug_line_str 00000065  00000000  00000000  00225204  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 23 .debug_loc    00006aac  00000000  00000000  00225249  2**0
+ 23 .debug_loc    00006aac  00000000  00000000  00225269  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 24 .debug_ranges 00001038  00000000  00000000  0022bcf5  2**0
+ 24 .debug_ranges 00001038  00000000  00000000  0022bd15  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -857,14 +857,14 @@ char threshold_mel_vectors() {
  8000884:	b083      	sub	sp, #12
 	START_CYCLE_COUNT_THRESHOLD();
  8000886:	f002 f945 	bl	8002b14 <start_cycle_count>
-	#endif
  
     // Check the threshold
     #if THRESHOLD_MODE == THRESHOLD_HARD_FULL // Threshold on the sum of all mel vectors
 		q31_t total_sum = 0;
+		// Unrolled loop for better performance for each mel vector	
 		for (size_t i = 0; i < N_MELVECS; i++) {
  800088a:	f04f 0b00 	mov.w	fp, #0
- 800088e:	4b5b      	ldr	r3, [pc, #364]	@ (80009fc <threshold_mel_vectors+0x17c>)
+ 800088e:	4b5c      	ldr	r3, [pc, #368]	@ (8000a00 <threshold_mel_vectors+0x180>)
 		q31_t total_sum = 0;
  8000890:	f8cd b000 	str.w	fp, [sp]
 			// Unrolled inner loop - process 4 elements at once
@@ -1041,234 +1041,231 @@ char threshold_mel_vectors() {
  80009be:	9200      	str	r2, [sp, #0]
 			if ((i & 0x1) == 0x1 && total_sum > corrected_threshold) {
  80009c0:	d002      	beq.n	80009c8 <threshold_mel_vectors+0x148>
- 80009c2:	f5b2 6ffa 	cmp.w	r2, #2000	@ 0x7d0
- 80009c6:	dc12      	bgt.n	80009ee <threshold_mel_vectors+0x16e>
+ 80009c2:	f5b2 7f48 	cmp.w	r2, #800	@ 0x320
+ 80009c6:	dc13      	bgt.n	80009f0 <threshold_mel_vectors+0x170>
 		for (size_t i = 0; i < N_MELVECS; i++) {
  80009c8:	f10b 0b01 	add.w	fp, fp, #1
  80009cc:	f1bb 0f14 	cmp.w	fp, #20
  80009d0:	f103 0328 	add.w	r3, r3, #40	@ 0x28
  80009d4:	f47f af5e 	bne.w	8000894 <threshold_mel_vectors+0x14>
+				STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
 				return 1;
 			}
 		}
-		
+		STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
+ 80009d8:	480a      	ldr	r0, [pc, #40]	@ (8000a04 <threshold_mel_vectors+0x184>)
+ 80009da:	f002 f8bb 	bl	8002b54 <stop_cycle_count>
 		// Final threshold check
 		if (total_sum > corrected_threshold) {
- 80009d8:	9c00      	ldr	r4, [sp, #0]
- 80009da:	f5b4 6ffa 	cmp.w	r4, #2000	@ 0x7d0
- 80009de:	dc06      	bgt.n	80009ee <threshold_mel_vectors+0x16e>
-			STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
-			return 1;
-		}
-		STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
- 80009e0:	4807      	ldr	r0, [pc, #28]	@ (8000a00 <threshold_mel_vectors+0x180>)
- 80009e2:	f002 f8b7 	bl	8002b54 <stop_cycle_count>
-			}
+ 80009de:	9c00      	ldr	r4, [sp, #0]
+ 80009e0:	f5b4 7f48 	cmp.w	r4, #800	@ 0x320
+ 80009e4:	bfd4      	ite	le
+ 80009e6:	2000      	movle	r0, #0
+ 80009e8:	2001      	movgt	r0, #1
 		}
         STOP_CYCLE_COUNT_THRESHOLD("Loose Threshold");
     #endif
 	
     return 0;
- 80009e6:	2000      	movs	r0, #0
 }
- 80009e8:	b003      	add	sp, #12
- 80009ea:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+ 80009ea:	b003      	add	sp, #12
+ 80009ec:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
 				STOP_CYCLE_COUNT_THRESHOLD("Hard Full Threshold");
- 80009ee:	4804      	ldr	r0, [pc, #16]	@ (8000a00 <threshold_mel_vectors+0x180>)
- 80009f0:	f002 f8b0 	bl	8002b54 <stop_cycle_count>
+ 80009f0:	4804      	ldr	r0, [pc, #16]	@ (8000a04 <threshold_mel_vectors+0x184>)
+ 80009f2:	f002 f8af 	bl	8002b54 <stop_cycle_count>
 				return 1;
- 80009f4:	2001      	movs	r0, #1
+ 80009f6:	2001      	movs	r0, #1
 }
- 80009f6:	b003      	add	sp, #12
- 80009f8:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
- 80009fc:	2000053c 	.word	0x2000053c
- 8000a00:	08009418 	.word	0x08009418
+ 80009f8:	b003      	add	sp, #12
+ 80009fa:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+ 80009fe:	bf00      	nop
+ 8000a00:	2000053c 	.word	0x2000053c
+ 8000a04:	08009418 	.word	0x08009418
 
-08000a04 <HAL_ADC_ConvCpltCallback>:
+08000a08 <HAL_ADC_ConvCpltCallback>:
         #endif
     }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
- 8000a04:	b570      	push	{r4, r5, r6, lr}
+ 8000a08:	b570      	push	{r4, r5, r6, lr}
     if (rem_n_bufs != -1) {
- 8000a06:	4c1f      	ldr	r4, [pc, #124]	@ (8000a84 <HAL_ADC_ConvCpltCallback+0x80>)
- 8000a08:	6823      	ldr	r3, [r4, #0]
- 8000a0a:	3301      	adds	r3, #1
- 8000a0c:	d002      	beq.n	8000a14 <HAL_ADC_ConvCpltCallback+0x10>
+ 8000a0a:	4c1f      	ldr	r4, [pc, #124]	@ (8000a88 <HAL_ADC_ConvCpltCallback+0x80>)
+ 8000a0c:	6823      	ldr	r3, [r4, #0]
+ 8000a0e:	3301      	adds	r3, #1
+ 8000a10:	d002      	beq.n	8000a18 <HAL_ADC_ConvCpltCallback+0x10>
         rem_n_bufs--;
- 8000a0e:	6820      	ldr	r0, [r4, #0]
- 8000a10:	1e41      	subs	r1, r0, #1
- 8000a12:	6021      	str	r1, [r4, #0]
+ 8000a12:	6820      	ldr	r0, [r4, #0]
+ 8000a14:	1e41      	subs	r1, r0, #1
+ 8000a16:	6021      	str	r1, [r4, #0]
     if (ADCDataRdy[1-buf_cplt]) {
- 8000a14:	4e1c      	ldr	r6, [pc, #112]	@ (8000a88 <HAL_ADC_ConvCpltCallback+0x84>)
- 8000a16:	7832      	ldrb	r2, [r6, #0]
- 8000a18:	bb52      	cbnz	r2, 8000a70 <HAL_ADC_ConvCpltCallback+0x6c>
+ 8000a18:	4e1c      	ldr	r6, [pc, #112]	@ (8000a8c <HAL_ADC_ConvCpltCallback+0x84>)
+ 8000a1a:	7832      	ldrb	r2, [r6, #0]
+ 8000a1c:	bb52      	cbnz	r2, 8000a74 <HAL_ADC_ConvCpltCallback+0x6c>
     ADCDataRdy[buf_cplt] = 1;
- 8000a1a:	2501      	movs	r5, #1
- 8000a1c:	7075      	strb	r5, [r6, #1]
+ 8000a1e:	2501      	movs	r5, #1
+ 8000a20:	7075      	strb	r5, [r6, #1]
     START_CYCLE_COUNT_SPECTROGRAM();
- 8000a1e:	f002 f879 	bl	8002b14 <start_cycle_count>
+ 8000a22:	f002 f877 	bl	8002b14 <start_cycle_count>
 	Spectrogram_Compute((q15_t *)ADCProcessBuf, mel_vectors[cur_melvec]);
- 8000a22:	4d1a      	ldr	r5, [pc, #104]	@ (8000a8c <HAL_ADC_ConvCpltCallback+0x88>)
+ 8000a26:	4d1a      	ldr	r5, [pc, #104]	@ (8000a90 <HAL_ADC_ConvCpltCallback+0x88>)
 	memcpy((void*)ADCProcessBuf, (void*)ADCData[buf_cplt], ADC_BUF_SIZE * sizeof(uint16_t));
- 8000a24:	491a      	ldr	r1, [pc, #104]	@ (8000a90 <HAL_ADC_ConvCpltCallback+0x8c>)
- 8000a26:	481b      	ldr	r0, [pc, #108]	@ (8000a94 <HAL_ADC_ConvCpltCallback+0x90>)
- 8000a28:	f44f 6280 	mov.w	r2, #1024	@ 0x400
- 8000a2c:	f007 ff1f 	bl	800886e <memcpy>
+ 8000a28:	491a      	ldr	r1, [pc, #104]	@ (8000a94 <HAL_ADC_ConvCpltCallback+0x8c>)
+ 8000a2a:	481b      	ldr	r0, [pc, #108]	@ (8000a98 <HAL_ADC_ConvCpltCallback+0x90>)
+ 8000a2c:	f44f 6280 	mov.w	r2, #1024	@ 0x400
+ 8000a30:	f007 ff1d 	bl	800886e <memcpy>
 	Spectrogram_Format((q15_t *)ADCProcessBuf);
- 8000a30:	4818      	ldr	r0, [pc, #96]	@ (8000a94 <HAL_ADC_ConvCpltCallback+0x90>)
- 8000a32:	f001 fd6d 	bl	8002510 <Spectrogram_Format>
+ 8000a34:	4818      	ldr	r0, [pc, #96]	@ (8000a98 <HAL_ADC_ConvCpltCallback+0x90>)
+ 8000a36:	f001 fd6b 	bl	8002510 <Spectrogram_Format>
 	Spectrogram_Compute((q15_t *)ADCProcessBuf, mel_vectors[cur_melvec]);
- 8000a36:	782b      	ldrb	r3, [r5, #0]
- 8000a38:	4817      	ldr	r0, [pc, #92]	@ (8000a98 <HAL_ADC_ConvCpltCallback+0x94>)
- 8000a3a:	eb03 0183 	add.w	r1, r3, r3, lsl #2
- 8000a3e:	eb00 01c1 	add.w	r1, r0, r1, lsl #3
- 8000a42:	4814      	ldr	r0, [pc, #80]	@ (8000a94 <HAL_ADC_ConvCpltCallback+0x90>)
- 8000a44:	f001 fddc 	bl	8002600 <Spectrogram_Compute>
+ 8000a3a:	782b      	ldrb	r3, [r5, #0]
+ 8000a3c:	4817      	ldr	r0, [pc, #92]	@ (8000a9c <HAL_ADC_ConvCpltCallback+0x94>)
+ 8000a3e:	eb03 0183 	add.w	r1, r3, r3, lsl #2
+ 8000a42:	eb00 01c1 	add.w	r1, r0, r1, lsl #3
+ 8000a46:	4814      	ldr	r0, [pc, #80]	@ (8000a98 <HAL_ADC_ConvCpltCallback+0x90>)
+ 8000a48:	f001 fdda 	bl	8002600 <Spectrogram_Compute>
     STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
- 8000a48:	4814      	ldr	r0, [pc, #80]	@ (8000a9c <HAL_ADC_ConvCpltCallback+0x98>)
- 8000a4a:	f002 f883 	bl	8002b54 <stop_cycle_count>
+ 8000a4c:	4814      	ldr	r0, [pc, #80]	@ (8000aa0 <HAL_ADC_ConvCpltCallback+0x98>)
+ 8000a4e:	f002 f881 	bl	8002b54 <stop_cycle_count>
     cur_melvec++;
- 8000a4e:	782b      	ldrb	r3, [r5, #0]
- 8000a50:	3301      	adds	r3, #1
+ 8000a52:	782b      	ldrb	r3, [r5, #0]
+ 8000a54:	3301      	adds	r3, #1
     ADCDataRdy[buf_cplt] = 0;
- 8000a52:	2200      	movs	r2, #0
+ 8000a56:	2200      	movs	r2, #0
     cur_melvec++;
- 8000a54:	b2d8      	uxtb	r0, r3
- 8000a56:	7028      	strb	r0, [r5, #0]
+ 8000a58:	b2d8      	uxtb	r0, r3
+ 8000a5a:	7028      	strb	r0, [r5, #0]
     ADCDataRdy[buf_cplt] = 0;
- 8000a58:	7072      	strb	r2, [r6, #1]
+ 8000a5c:	7072      	strb	r2, [r6, #1]
     if (rem_n_bufs == 0) {
- 8000a5a:	6826      	ldr	r6, [r4, #0]
- 8000a5c:	b106      	cbz	r6, 8000a60 <HAL_ADC_ConvCpltCallback+0x5c>
+ 8000a5e:	6826      	ldr	r6, [r4, #0]
+ 8000a60:	b106      	cbz	r6, 8000a64 <HAL_ADC_ConvCpltCallback+0x5c>
 	ADC_Callback(1);
 }
- 8000a5e:	bd70      	pop	{r4, r5, r6, pc}
+ 8000a62:	bd70      	pop	{r4, r5, r6, pc}
 			if (threshold_mel_vectors()) {
- 8000a60:	f7ff ff0e 	bl	8000880 <threshold_mel_vectors>
- 8000a64:	b950      	cbnz	r0, 8000a7c <HAL_ADC_ConvCpltCallback+0x78>
+ 8000a64:	f7ff ff0c 	bl	8000880 <threshold_mel_vectors>
+ 8000a68:	b950      	cbnz	r0, 8000a80 <HAL_ADC_ConvCpltCallback+0x78>
             cur_melvec = 0;
- 8000a66:	2100      	movs	r1, #0
+ 8000a6a:	2100      	movs	r1, #0
             rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
- 8000a68:	2314      	movs	r3, #20
+ 8000a6c:	2314      	movs	r3, #20
             cur_melvec = 0;
- 8000a6a:	7029      	strb	r1, [r5, #0]
+ 8000a6e:	7029      	strb	r1, [r5, #0]
             rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
- 8000a6c:	6023      	str	r3, [r4, #0]
+ 8000a70:	6023      	str	r3, [r4, #0]
 }
- 8000a6e:	bd70      	pop	{r4, r5, r6, pc}
+ 8000a72:	bd70      	pop	{r4, r5, r6, pc}
         DEBUG_PRINT("Error: ADC Data buffer full\r\n");
- 8000a70:	480b      	ldr	r0, [pc, #44]	@ (8000aa0 <HAL_ADC_ConvCpltCallback+0x9c>)
- 8000a72:	f007 fcdd 	bl	8008430 <puts>
+ 8000a74:	480b      	ldr	r0, [pc, #44]	@ (8000aa4 <HAL_ADC_ConvCpltCallback+0x9c>)
+ 8000a76:	f007 fcdb 	bl	8008430 <puts>
         Error_Handler();
- 8000a76:	f000 fa9d 	bl	8000fb4 <Error_Handler>
- 8000a7a:	e7ce      	b.n	8000a1a <HAL_ADC_ConvCpltCallback+0x16>
+ 8000a7a:	f000 fa9b 	bl	8000fb4 <Error_Handler>
+ 8000a7e:	e7ce      	b.n	8000a1e <HAL_ADC_ConvCpltCallback+0x16>
 				send_spectrogram();
- 8000a7c:	f7ff fe3a 	bl	80006f4 <send_spectrogram>
- 8000a80:	e7f1      	b.n	8000a66 <HAL_ADC_ConvCpltCallback+0x62>
- 8000a82:	bf00      	nop
- 8000a84:	20000534 	.word	0x20000534
- 8000a88:	20000c60 	.word	0x20000c60
- 8000a8c:	2000085c 	.word	0x2000085c
- 8000a90:	20001064 	.word	0x20001064
- 8000a94:	20000860 	.word	0x20000860
- 8000a98:	2000053c 	.word	0x2000053c
- 8000a9c:	0800944c 	.word	0x0800944c
- 8000aa0:	0800942c 	.word	0x0800942c
+ 8000a80:	f7ff fe38 	bl	80006f4 <send_spectrogram>
+ 8000a84:	e7f1      	b.n	8000a6a <HAL_ADC_ConvCpltCallback+0x62>
+ 8000a86:	bf00      	nop
+ 8000a88:	20000534 	.word	0x20000534
+ 8000a8c:	20000c60 	.word	0x20000c60
+ 8000a90:	2000085c 	.word	0x2000085c
+ 8000a94:	20001064 	.word	0x20001064
+ 8000a98:	20000860 	.word	0x20000860
+ 8000a9c:	2000053c 	.word	0x2000053c
+ 8000aa0:	0800944c 	.word	0x0800944c
+ 8000aa4:	0800942c 	.word	0x0800942c
 
-08000aa4 <HAL_ADC_ConvHalfCpltCallback>:
+08000aa8 <HAL_ADC_ConvHalfCpltCallback>:
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
 {
- 8000aa4:	b570      	push	{r4, r5, r6, lr}
+ 8000aa8:	b570      	push	{r4, r5, r6, lr}
     if (rem_n_bufs != -1) {
- 8000aa6:	4c1f      	ldr	r4, [pc, #124]	@ (8000b24 <HAL_ADC_ConvHalfCpltCallback+0x80>)
- 8000aa8:	6823      	ldr	r3, [r4, #0]
- 8000aaa:	3301      	adds	r3, #1
- 8000aac:	d002      	beq.n	8000ab4 <HAL_ADC_ConvHalfCpltCallback+0x10>
+ 8000aaa:	4c1f      	ldr	r4, [pc, #124]	@ (8000b28 <HAL_ADC_ConvHalfCpltCallback+0x80>)
+ 8000aac:	6823      	ldr	r3, [r4, #0]
+ 8000aae:	3301      	adds	r3, #1
+ 8000ab0:	d002      	beq.n	8000ab8 <HAL_ADC_ConvHalfCpltCallback+0x10>
         rem_n_bufs--;
- 8000aae:	6820      	ldr	r0, [r4, #0]
- 8000ab0:	1e41      	subs	r1, r0, #1
- 8000ab2:	6021      	str	r1, [r4, #0]
+ 8000ab2:	6820      	ldr	r0, [r4, #0]
+ 8000ab4:	1e41      	subs	r1, r0, #1
+ 8000ab6:	6021      	str	r1, [r4, #0]
     if (ADCDataRdy[1-buf_cplt]) {
- 8000ab4:	4e1c      	ldr	r6, [pc, #112]	@ (8000b28 <HAL_ADC_ConvHalfCpltCallback+0x84>)
- 8000ab6:	7872      	ldrb	r2, [r6, #1]
- 8000ab8:	bb52      	cbnz	r2, 8000b10 <HAL_ADC_ConvHalfCpltCallback+0x6c>
+ 8000ab8:	4e1c      	ldr	r6, [pc, #112]	@ (8000b2c <HAL_ADC_ConvHalfCpltCallback+0x84>)
+ 8000aba:	7872      	ldrb	r2, [r6, #1]
+ 8000abc:	bb52      	cbnz	r2, 8000b14 <HAL_ADC_ConvHalfCpltCallback+0x6c>
     ADCDataRdy[buf_cplt] = 1;
- 8000aba:	2501      	movs	r5, #1
- 8000abc:	7035      	strb	r5, [r6, #0]
+ 8000abe:	2501      	movs	r5, #1
+ 8000ac0:	7035      	strb	r5, [r6, #0]
     START_CYCLE_COUNT_SPECTROGRAM();
- 8000abe:	f002 f829 	bl	8002b14 <start_cycle_count>
+ 8000ac2:	f002 f827 	bl	8002b14 <start_cycle_count>
 	Spectrogram_Compute((q15_t *)ADCProcessBuf, mel_vectors[cur_melvec]);
- 8000ac2:	4d1a      	ldr	r5, [pc, #104]	@ (8000b2c <HAL_ADC_ConvHalfCpltCallback+0x88>)
+ 8000ac6:	4d1a      	ldr	r5, [pc, #104]	@ (8000b30 <HAL_ADC_ConvHalfCpltCallback+0x88>)
 	memcpy((void*)ADCProcessBuf, (void*)ADCData[buf_cplt], ADC_BUF_SIZE * sizeof(uint16_t));
- 8000ac4:	491a      	ldr	r1, [pc, #104]	@ (8000b30 <HAL_ADC_ConvHalfCpltCallback+0x8c>)
- 8000ac6:	481b      	ldr	r0, [pc, #108]	@ (8000b34 <HAL_ADC_ConvHalfCpltCallback+0x90>)
- 8000ac8:	f44f 6280 	mov.w	r2, #1024	@ 0x400
- 8000acc:	f007 fecf 	bl	800886e <memcpy>
+ 8000ac8:	491a      	ldr	r1, [pc, #104]	@ (8000b34 <HAL_ADC_ConvHalfCpltCallback+0x8c>)
+ 8000aca:	481b      	ldr	r0, [pc, #108]	@ (8000b38 <HAL_ADC_ConvHalfCpltCallback+0x90>)
+ 8000acc:	f44f 6280 	mov.w	r2, #1024	@ 0x400
+ 8000ad0:	f007 fecd 	bl	800886e <memcpy>
 	Spectrogram_Format((q15_t *)ADCProcessBuf);
- 8000ad0:	4818      	ldr	r0, [pc, #96]	@ (8000b34 <HAL_ADC_ConvHalfCpltCallback+0x90>)
- 8000ad2:	f001 fd1d 	bl	8002510 <Spectrogram_Format>
+ 8000ad4:	4818      	ldr	r0, [pc, #96]	@ (8000b38 <HAL_ADC_ConvHalfCpltCallback+0x90>)
+ 8000ad6:	f001 fd1b 	bl	8002510 <Spectrogram_Format>
 	Spectrogram_Compute((q15_t *)ADCProcessBuf, mel_vectors[cur_melvec]);
- 8000ad6:	782b      	ldrb	r3, [r5, #0]
- 8000ad8:	4817      	ldr	r0, [pc, #92]	@ (8000b38 <HAL_ADC_ConvHalfCpltCallback+0x94>)
- 8000ada:	eb03 0183 	add.w	r1, r3, r3, lsl #2
- 8000ade:	eb00 01c1 	add.w	r1, r0, r1, lsl #3
- 8000ae2:	4814      	ldr	r0, [pc, #80]	@ (8000b34 <HAL_ADC_ConvHalfCpltCallback+0x90>)
- 8000ae4:	f001 fd8c 	bl	8002600 <Spectrogram_Compute>
+ 8000ada:	782b      	ldrb	r3, [r5, #0]
+ 8000adc:	4817      	ldr	r0, [pc, #92]	@ (8000b3c <HAL_ADC_ConvHalfCpltCallback+0x94>)
+ 8000ade:	eb03 0183 	add.w	r1, r3, r3, lsl #2
+ 8000ae2:	eb00 01c1 	add.w	r1, r0, r1, lsl #3
+ 8000ae6:	4814      	ldr	r0, [pc, #80]	@ (8000b38 <HAL_ADC_ConvHalfCpltCallback+0x90>)
+ 8000ae8:	f001 fd8a 	bl	8002600 <Spectrogram_Compute>
     STOP_CYCLE_COUNT_SPECTROGRAM("Full Spectrogram");
- 8000ae8:	4814      	ldr	r0, [pc, #80]	@ (8000b3c <HAL_ADC_ConvHalfCpltCallback+0x98>)
- 8000aea:	f002 f833 	bl	8002b54 <stop_cycle_count>
+ 8000aec:	4814      	ldr	r0, [pc, #80]	@ (8000b40 <HAL_ADC_ConvHalfCpltCallback+0x98>)
+ 8000aee:	f002 f831 	bl	8002b54 <stop_cycle_count>
     cur_melvec++;
- 8000aee:	782b      	ldrb	r3, [r5, #0]
- 8000af0:	3301      	adds	r3, #1
+ 8000af2:	782b      	ldrb	r3, [r5, #0]
+ 8000af4:	3301      	adds	r3, #1
     ADCDataRdy[buf_cplt] = 0;
- 8000af2:	2200      	movs	r2, #0
+ 8000af6:	2200      	movs	r2, #0
     cur_melvec++;
- 8000af4:	b2d8      	uxtb	r0, r3
- 8000af6:	7028      	strb	r0, [r5, #0]
+ 8000af8:	b2d8      	uxtb	r0, r3
+ 8000afa:	7028      	strb	r0, [r5, #0]
     ADCDataRdy[buf_cplt] = 0;
- 8000af8:	7032      	strb	r2, [r6, #0]
+ 8000afc:	7032      	strb	r2, [r6, #0]
     if (rem_n_bufs == 0) {
- 8000afa:	6826      	ldr	r6, [r4, #0]
- 8000afc:	b106      	cbz	r6, 8000b00 <HAL_ADC_ConvHalfCpltCallback+0x5c>
+ 8000afe:	6826      	ldr	r6, [r4, #0]
+ 8000b00:	b106      	cbz	r6, 8000b04 <HAL_ADC_ConvHalfCpltCallback+0x5c>
 	ADC_Callback(0);
 }
- 8000afe:	bd70      	pop	{r4, r5, r6, pc}
+ 8000b02:	bd70      	pop	{r4, r5, r6, pc}
 			if (threshold_mel_vectors()) {
- 8000b00:	f7ff febe 	bl	8000880 <threshold_mel_vectors>
- 8000b04:	b950      	cbnz	r0, 8000b1c <HAL_ADC_ConvHalfCpltCallback+0x78>
+ 8000b04:	f7ff febc 	bl	8000880 <threshold_mel_vectors>
+ 8000b08:	b950      	cbnz	r0, 8000b20 <HAL_ADC_ConvHalfCpltCallback+0x78>
             cur_melvec = 0;
- 8000b06:	2100      	movs	r1, #0
+ 8000b0a:	2100      	movs	r1, #0
             rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
- 8000b08:	2314      	movs	r3, #20
+ 8000b0c:	2314      	movs	r3, #20
             cur_melvec = 0;
- 8000b0a:	7029      	strb	r1, [r5, #0]
+ 8000b0e:	7029      	strb	r1, [r5, #0]
             rem_n_bufs = N_MELVECS; // Reset to collect next set of vectors
- 8000b0c:	6023      	str	r3, [r4, #0]
+ 8000b10:	6023      	str	r3, [r4, #0]
 }
- 8000b0e:	bd70      	pop	{r4, r5, r6, pc}
+ 8000b12:	bd70      	pop	{r4, r5, r6, pc}
         DEBUG_PRINT("Error: ADC Data buffer full\r\n");
- 8000b10:	480b      	ldr	r0, [pc, #44]	@ (8000b40 <HAL_ADC_ConvHalfCpltCallback+0x9c>)
- 8000b12:	f007 fc8d 	bl	8008430 <puts>
+ 8000b14:	480b      	ldr	r0, [pc, #44]	@ (8000b44 <HAL_ADC_ConvHalfCpltCallback+0x9c>)
+ 8000b16:	f007 fc8b 	bl	8008430 <puts>
         Error_Handler();
- 8000b16:	f000 fa4d 	bl	8000fb4 <Error_Handler>
- 8000b1a:	e7ce      	b.n	8000aba <HAL_ADC_ConvHalfCpltCallback+0x16>
+ 8000b1a:	f000 fa4b 	bl	8000fb4 <Error_Handler>
+ 8000b1e:	e7ce      	b.n	8000abe <HAL_ADC_ConvHalfCpltCallback+0x16>
 				send_spectrogram();
- 8000b1c:	f7ff fdea 	bl	80006f4 <send_spectrogram>
- 8000b20:	e7f1      	b.n	8000b06 <HAL_ADC_ConvHalfCpltCallback+0x62>
- 8000b22:	bf00      	nop
- 8000b24:	20000534 	.word	0x20000534
- 8000b28:	20000c60 	.word	0x20000c60
- 8000b2c:	2000085c 	.word	0x2000085c
- 8000b30:	20000c64 	.word	0x20000c64
- 8000b34:	20000860 	.word	0x20000860
- 8000b38:	2000053c 	.word	0x2000053c
- 8000b3c:	0800944c 	.word	0x0800944c
- 8000b40:	0800942c 	.word	0x0800942c
- 8000b44:	00000000 	.word	0x00000000
+ 8000b20:	f7ff fde8 	bl	80006f4 <send_spectrogram>
+ 8000b24:	e7f1      	b.n	8000b0a <HAL_ADC_ConvHalfCpltCallback+0x62>
+ 8000b26:	bf00      	nop
+ 8000b28:	20000534 	.word	0x20000534
+ 8000b2c:	20000c60 	.word	0x20000c60
+ 8000b30:	2000085c 	.word	0x2000085c
+ 8000b34:	20000c64 	.word	0x20000c64
+ 8000b38:	20000860 	.word	0x20000860
+ 8000b3c:	2000053c 	.word	0x2000053c
+ 8000b40:	0800944c 	.word	0x0800944c
+ 8000b44:	0800942c 	.word	0x0800942c
 
 08000b48 <MX_AES_Init>:
 /* AES init function */
@@ -6932,7 +6929,7 @@ void ADC_DMAHalfConvCplt(DMA_HandleTypeDef *hdma)
 #else
   HAL_ADC_ConvHalfCpltCallback(hadc);
  800300e:	6a80      	ldr	r0, [r0, #40]	@ 0x28
- 8003010:	f7fd fd48 	bl	8000aa4 <HAL_ADC_ConvHalfCpltCallback>
+ 8003010:	f7fd fd4a 	bl	8000aa8 <HAL_ADC_ConvHalfCpltCallback>
 #endif /* USE_HAL_ADC_REGISTER_CALLBACKS */
 }
  8003014:	bd08      	pop	{r3, pc}
@@ -6986,7 +6983,7 @@ __weak void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
  800305c:	659a      	str	r2, [r3, #88]	@ 0x58
     HAL_ADC_ConvCpltCallback(hadc);
  800305e:	4618      	mov	r0, r3
- 8003060:	f7fd fcd0 	bl	8000a04 <HAL_ADC_ConvCpltCallback>
+ 8003060:	f7fd fcd2 	bl	8000a08 <HAL_ADC_ConvCpltCallback>
 }
  8003064:	bd10      	pop	{r4, pc}
     if ((hadc->State & HAL_ADC_STATE_ERROR_INTERNAL) != 0UL)
@@ -7004,7 +7001,7 @@ __weak void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
  8003076:	d5e7      	bpl.n	8003048 <ADC_DMAConvCplt+0x2c>
     HAL_ADC_ConvCpltCallback(hadc);
  8003078:	4618      	mov	r0, r3
- 800307a:	f7fd fcc3 	bl	8000a04 <HAL_ADC_ConvCpltCallback>
+ 800307a:	f7fd fcc5 	bl	8000a08 <HAL_ADC_ConvCpltCallback>
  800307e:	e7f1      	b.n	8003064 <ADC_DMAConvCplt+0x48>
       HAL_ADC_ErrorCallback(hadc);
  8003080:	4618      	mov	r0, r3

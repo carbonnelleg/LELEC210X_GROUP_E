@@ -279,13 +279,29 @@ char threshold_mel_vectors() {
 		}		
 		STOP_CYCLE_COUNT_THRESHOLD("Hard Per Melvec Threshold");
     #elif THRESHOLD_MODE == THRESHOLD_LOOSE // Threshold on the maximum absolute value of each mel vector
+		// Unrolled loop for better performance for each mel vector
 		for (size_t i=0; i < N_MELVECS; i++) {
-			// Use the arm_absmax_q15 function to find the maximum absolute value
-			q15_t vmax = 0;
-			uint32_t pIndex = 0;
-			arm_absmax_q15(mel_vectors[i], MELVEC_LENGTH, &vmax, &pIndex);
-			// If the threshold is reached, return
-			if (vmax > corrected_threshold) {
+			q15_t max_found = 0;
+			size_t j = 0;
+			for (; j < MELVEC_LENGTH - 4; j += 4) {
+				q15_t val0 = mel_vectors[i][j];
+				q15_t val1 = mel_vectors[i][j+1];
+				q15_t val2 = mel_vectors[i][j+2];
+				q15_t val3 = mel_vectors[i][j+3];
+
+				// Calculate the absolute value, and check if its greater than the corrected threshold
+				max_found |= ((val0 ^ (val0 >> 15)) - (val0 >> 15)) > corrected_threshold;
+				max_found |= ((val1 ^ (val1 >> 15)) - (val1 >> 15)) > corrected_threshold;
+				max_found |= ((val2 ^ (val2 >> 15)) - (val2 >> 15)) > corrected_threshold;
+				max_found |= ((val3 ^ (val3 >> 15)) - (val3 >> 15)) > corrected_threshold;
+			}
+			// Handle remaining elements
+			for (; j < MELVEC_LENGTH; j++) {
+				q15_t val = mel_vectors[i][j];
+				max_found |= (val ^ (val >> 15)) - (val >> 15) > corrected_threshold; // Branchless absolute value
+			}
+			// Threshold check
+			if (max_found) {
 				STOP_CYCLE_COUNT_THRESHOLD("Loose Threshold");
 				return 1;
 			}

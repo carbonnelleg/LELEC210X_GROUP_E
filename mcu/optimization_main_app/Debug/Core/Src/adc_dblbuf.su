@@ -2,5 +2,5 @@
 ../Core/Src/adc_dblbuf.c:77:5:StartADCAcq	8	static
 ../Core/Src/adc_dblbuf.c:88:5:IsADCFinished	0	static
 ../Core/Src/adc_dblbuf.c:200:6:threshold_mel_vectors	48	static
-../Core/Src/adc_dblbuf.c:335:6:HAL_ADC_ConvCpltCallback	16	static
-../Core/Src/adc_dblbuf.c:340:6:HAL_ADC_ConvHalfCpltCallback	16	static
+../Core/Src/adc_dblbuf.c:362:6:HAL_ADC_ConvCpltCallback	16	static
+../Core/Src/adc_dblbuf.c:367:6:HAL_ADC_ConvHalfCpltCallback	16	static

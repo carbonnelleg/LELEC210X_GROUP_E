@@ -99,7 +99,7 @@
 #define THRESHOLD_HARD_PER_MELVEC 1
 #define THRESHOLD_LOOSE 2
 #define USE_THRESHOLD 1 // Enable/disable thresholding
-#define THRESHOLD_VALUE 0x5 // Threshold value for the Mel vectors
+#define THRESHOLD_VALUE 0x2 // Threshold value for the Mel vectors
 #define THRESHOLD_MODE THRESHOLD_HARD_FULL // Select either THRESHOLD_HARD_FULL, THRESHOLD_HARD_PER_MELVEC, or THRESHOLD_LOOSE
 
 /*------------------------------------------------------------------------------
