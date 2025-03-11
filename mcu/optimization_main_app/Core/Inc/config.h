@@ -58,6 +58,12 @@
 // Enable/disable radio communication
 #define ENABLE_RADIO 1
 
+// Sender ID
+#define SENDER_ID 0
+
+// Optimize for the encoding of the packet, and the position of the crypto
+#define PACKET_OPT_LEVEL 1 // 0 (No optimization), 1 (Optimization)
+
 // Cryptography Implementation Selection
 #define USE_SOFTWARE_CRYPTO 0  // Performance: 521391 cycles per packet
 #define USE_HARDWARE_CRYPTO 1  // Performance: 17244 cycles per packet
@@ -110,8 +116,9 @@
 #define MEASURE_CYCLES_MEL 1
 
 #define MEASURE_CYCLES_THRESHOLD 1
-#define MEASURE_CYCLES_ENCODE_PACKET 1
-#define MEASURE_CYCLES_SEND_PACKET 0
+#define MEASURE_CYCLES_ENCODE_PACKET 0
+#define MEASURE_CYCLES_CBC_MAC 1
+#define MEASURE_CYCLES_SEND_PACKET 1
 
 #define MEASURE_CYCLES_PRINT_FV 0
 #define MEASURE_CYCLES_PRINT_PACKET 0
@@ -158,6 +165,12 @@
         #undef CHAIN_OPTIMIZE_MEL_OPT
         #define CHAIN_OPTIMIZE_MEL_OPT 0
     #endif
+#endif
+
+// If CBC mac cycle count
+#if MEASURE_CYCLES_CBC_MAC == 1
+    #undef MEASURE_CYCLES_ENCODE_PACKET
+    #define MEASURE_CYCLES_ENCODE_PACKET 0
 #endif
 
 #endif /* INC_CONFIG_H_ */

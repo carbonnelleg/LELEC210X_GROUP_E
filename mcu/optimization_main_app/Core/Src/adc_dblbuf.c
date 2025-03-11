@@ -121,6 +121,7 @@ static void print_encoded_packet(uint8_t *packet) {
 #endif
 }
 
+#if PACKET_OPT_LEVEL == 0
 // Function to encode the packet
 static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 	// BE encoding of each mel coef
@@ -131,7 +132,7 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 		}
 	}
 	// Write header and tag into the packet.
-	make_packet(packet, PAYLOAD_LENGTH, 0, *packet_cnt);
+	make_packet(packet, PAYLOAD_LENGTH, SENDER_ID, *packet_cnt);
 	*packet_cnt += 1;
 	if (*packet_cnt == 0) {
 		// Should not happen as packet_cnt is 32-bit and we send at most 1 packet per second.
@@ -139,6 +140,46 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 		Error_Handler();
 	}
 }
+#elif PACKET_OPT_LEVEL == 1
+// Function to encode the packet
+static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
+	// Use pointer arithmetic for better performance
+    uint8_t *ptr = packet + PACKET_HEADER_LENGTH;
+    
+	// BE encoding of each mel coef
+    for (size_t i=0; i<N_MELVECS; i++) {
+        const q15_t *mel_ptr = mel_vectors[i];
+        
+        // Unfold the loop, and hint for SIMD instructions
+        for (size_t j=0; j<MELVEC_LENGTH-1; j+=2) {
+            // Load two q15_t values
+            uint32_t pair = (mel_ptr[j] << 16) | (mel_ptr[j+1] & 0xFFFF);
+            
+            // Extract bytes with bitwise operations
+            *ptr++ = (pair >> 24) & 0xFF;        // First value high byte
+            *ptr++ = (pair >> 16) & 0xFF;        // First value low byte
+            *ptr++ = (pair >> 8) & 0xFF;         // Second value high byte
+            *ptr++ = pair & 0xFF;                // Second value low byte
+        }
+        
+        // Handle odd element if MELVEC_LENGTH is odd
+        if (MELVEC_LENGTH & 0b1) {
+            size_t j = MELVEC_LENGTH - 1;
+            *ptr++ = mel_ptr[j] >> 8;
+            *ptr++ = mel_ptr[j] & 0xFF;
+        }
+    }
+	// Write header and tag into the packet.
+	make_packet(packet, PAYLOAD_LENGTH, SENDER_ID, *packet_cnt);
+
+	*packet_cnt += 1;
+	if (*packet_cnt == 0) {
+		// Should not happen as packet_cnt is 32-bit and we send at most 1 packet per second.
+		DEBUG_PRINT("Packet counter overflow.\r\n");
+		Error_Handler();
+	}
+}
+#endif
 
 // Function to create and send the packet
 static void send_spectrogram() {
@@ -150,7 +191,7 @@ static void send_spectrogram() {
 
 	START_CYCLE_COUNT_SEND_PACKET();
 	S2LP_Send(packet, PACKET_LENGTH);
-	STOP_CYCLE_COUNT_SEND_PACKET("Send Packet");
+	STOP_CYCLE_COUNT_SEND_PACKET("Send Packet to S2LP");
 
 	print_encoded_packet(packet);
 }

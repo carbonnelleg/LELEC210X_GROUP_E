@@ -19,6 +19,15 @@
 
 // BUG : VSCode does not recognize many of the types, such as uint32_t, i couldn't find a fix for this
 
+
+#if MEASURE_CYCLES_CBC_MAC == 1
+	#define START_CYCLE_COUNT_CBC_MAC() start_cycle_count()
+	#define STOP_CYCLE_COUNT_CBC_MAC(str) stop_cycle_count(str)
+#else
+	#define START_CYCLE_COUNT_CBC_MAC()
+	#define STOP_CYCLE_COUNT_CBC_MAC(str)	
+#endif
+
 // The AES key used for CBC-MAC (for software crypto)
 const uint8_t AES_Key[16]  = {
                             0x00,0x00,0x00,0x00,
@@ -118,12 +127,8 @@ void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
 // Assumes payload is already in place in the packet
 int make_packet(uint8_t *packet, size_t payload_len, uint8_t sender_id, uint32_t serial) {
     size_t packet_len = payload_len + PACKET_HEADER_LENGTH + PACKET_TAG_LENGTH;
-    // Initially, the whole packet header is set to 0s
-    memset(packet, 0, PACKET_HEADER_LENGTH);
     // So is the tag
 	memset(packet + payload_len + PACKET_HEADER_LENGTH, 0, PACKET_TAG_LENGTH);
-
-	// TO DO :  replace the two previous command by properly
 
 	// Set the reserved field to 0
 	packet[0] = 0x00;
@@ -159,10 +164,13 @@ int make_packet(uint8_t *packet, size_t payload_len, uint8_t sender_id, uint32_t
 
 	// For the tag field, you have to calculate the tag. The function call below is correct but
 	// tag_cbc_mac function, calculating the tag, is not implemented.
+	START_CYCLE_COUNT_CBC_MAC();
 	#if USE_CRYPTO == USE_HARDWARE_CRYPTO
     	tag_cbc_mac_hardware(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+		STOP_CYCLE_COUNT_CBC_MAC("CBC-MAC Hardware");
 	#else
 		tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+		STOP_CYCLE_COUNT_CBC_MAC("CBC-MAC Software");
 	#endif
 
     return packet_len;
