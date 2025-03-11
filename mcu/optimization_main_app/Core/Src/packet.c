@@ -72,8 +72,6 @@ void tag_cbc_mac(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
  * @param msg_len : the length of the message
  */
 void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
-    // Create aligned buffers for temp storage
-    __ALIGN_BEGIN static uint8_t iv[16] __ALIGN_END = {0};
     // Allocate enough space for all blocks
     __ALIGN_BEGIN static uint8_t *tmp_out = NULL;
     
@@ -88,27 +86,7 @@ void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
         return;
     }
     
-    // Step 1: reset the AES peripheral
-    if (HAL_CRYP_DeInit(&hcryp) != HAL_OK) {
-        free(tmp_out);
-        Error_Handler();
-        return;
-    }
-
-    // Step 2: Configure for CBC mode
-    hcryp.Init.DataType = CRYP_DATATYPE_8B;
-    hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
-    hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
-    hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CBC;
-    hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
-    hcryp.Init.pKey = (uint8_t*)AES_Key;
-    hcryp.Init.pInitVect = (uint8_t*)iv;
-
-    if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
-        free(tmp_out);
-        Error_Handler();
-        return;
-    }
+	// Step 1: Reset the peripheral (but its donne by HAL_CRYP_AESCBC_Encrypt)
 
     // Step 3: Perform CBC encryption with proper padding
     if (HAL_CRYP_AESCBC_Encrypt(&hcryp, (uint8_t *)msg, msg_len, tmp_out, 1000) != HAL_OK) {
