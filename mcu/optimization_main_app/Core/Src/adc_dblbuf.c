@@ -190,7 +190,13 @@ static void send_spectrogram() {
 	STOP_CYCLE_COUNT_ENCODE_PACKET("Encode Packet");
 
 	START_CYCLE_COUNT_SEND_PACKET();
+	#if NO_S2LP_SLEEP == 0
+		S2LP_WakeUp();
+	#endif
 	S2LP_Send(packet, PACKET_LENGTH);
+	#if NO_S2LP_SLEEP == 0
+		S2LP_Sleep();
+	#endif
 	STOP_CYCLE_COUNT_SEND_PACKET("Send Packet to S2LP");
 
 	print_encoded_packet(packet);

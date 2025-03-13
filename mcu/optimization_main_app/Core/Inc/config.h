@@ -35,6 +35,9 @@
 // Deactivate the loop unrolling optimizations that can make the compilation complain
 #define NO_LOOP_UNROLLING 0
 
+// Deactivate the sleep mode of the S2LP
+#define NO_S2LP_SLEEP 0
+
 /*------------------------------------------------------------------------------
 * System Configuration
 *----------------------------------------------------------------------------*/

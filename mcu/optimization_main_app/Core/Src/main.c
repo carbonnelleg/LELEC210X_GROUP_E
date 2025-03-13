@@ -97,6 +97,11 @@ void run(void)
 {
 	btn_press = 0;
 
+  // Initialize the S2LP to the sleep mode if configured
+  #if NO_S2LP_SLEEP == 0
+    S2LP_Sleep();
+  #endif
+
 	while (1)
 	{
     // If NO_BUTTON is set, we acquire and send the packet directly and continuously
