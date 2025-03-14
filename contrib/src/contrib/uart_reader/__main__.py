@@ -1146,12 +1146,7 @@ class GUIMainWindow(QMainWindow):
         log_message = f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {prefix} : {message}"
         with open(str(log_path / log_file), "a") as f:
             f.write(log_message + "\n")
-        print(
-            f"Received {len(message)} bytes for prefix {prefix}, check the log file for the whole message"
-        )
-        self.logger.info(
-            f"Received {len(message)} bytes for prefix {prefix}, check the log file for the whole message"
-        )
+        #print(log_message)
 
         # self.logger.info(f"Received {len(message)} bytes for prefix {prefix}")
         if prefix == self.db.get_item("Serial Settings", "database_prefix").value:

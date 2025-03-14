@@ -8,7 +8,7 @@
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1319:19:HAL_UART_Transmit_IT	4	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1402:19:HAL_UART_Receive_IT	8	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1443:19:HAL_UART_Transmit_DMA	16	static,ignoring_inline_asm
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1549:19:HAL_UART_DMAPause	0	static,ignoring_inline_asm
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1549:19:HAL_UART_DMAPause	4	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1579:19:HAL_UART_DMAResume	0	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1610:19:HAL_UART_DMAStop	16	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1685:19:HAL_UART_Abort	16	static,ignoring_inline_asm
@@ -24,7 +24,7 @@
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:3975:13:UART_DMAError	8	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:4015:13:UART_DMAAbortOnError	8	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:2755:13:HAL_UART_AbortCpltCallback	0	static
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1936:19:HAL_UART_Abort_IT	16	static,ignoring_inline_asm
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:1936:19:HAL_UART_Abort_IT	24	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:4095:13:UART_DMARxAbortCallback	8	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:4038:13:UART_DMATxAbortCallback	8	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c:2770:13:HAL_UART_AbortTransmitCpltCallback	0	static

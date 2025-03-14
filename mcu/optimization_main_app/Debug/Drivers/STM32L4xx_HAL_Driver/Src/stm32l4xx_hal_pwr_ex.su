@@ -27,7 +27,7 @@
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:947:6:HAL_PWREx_DisablePVM4	0	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:967:19:HAL_PWREx_ConfigPVM	0	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1129:6:HAL_PWREx_EnableLowPowerRunMode	0	static
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1144:19:HAL_PWREx_DisableLowPowerRunMode	0	static
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1144:19:HAL_PWREx_DisableLowPowerRunMode	4	static
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1188:6:HAL_PWREx_EnterSTOP0Mode	0	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1239:6:HAL_PWREx_EnterSTOP1Mode	0	static,ignoring_inline_asm
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c:1292:6:HAL_PWREx_EnterSTOP2Mode	0	static,ignoring_inline_asm

@@ -1,0 +1,7 @@
+{
+    "title": "Optimization of the CBC TAG",
+    "xlabel": "Optimization",
+    "ylabel": "Cycle Count",
+    "x": ["Software CBC MAC", "Hardware CBC MAC\n Oneshot", "Failed Hardware CMAC"],
+    "y": [521391, 17244, 3456]
+}

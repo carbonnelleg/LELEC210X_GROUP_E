@@ -19,6 +19,15 @@
 
 // BUG : VSCode does not recognize many of the types, such as uint32_t, i couldn't find a fix for this
 
+
+#if MEASURE_CYCLES_CBC_MAC == 1
+	#define START_CYCLE_COUNT_CBC_MAC() start_cycle_count()
+	#define STOP_CYCLE_COUNT_CBC_MAC(str) stop_cycle_count(str)
+#else
+	#define START_CYCLE_COUNT_CBC_MAC()
+	#define STOP_CYCLE_COUNT_CBC_MAC(str)	
+#endif
+
 // The AES key used for CBC-MAC (for software crypto)
 const uint8_t AES_Key[16]  = {
                             0x00,0x00,0x00,0x00,
@@ -63,8 +72,6 @@ void tag_cbc_mac(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
  * @param msg_len : the length of the message
  */
 void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
-    // Create aligned buffers for temp storage
-    __ALIGN_BEGIN static uint8_t iv[16] __ALIGN_END = {0};
     // Allocate enough space for all blocks
     __ALIGN_BEGIN static uint8_t *tmp_out = NULL;
     
@@ -79,27 +86,7 @@ void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
         return;
     }
     
-    // Step 1: reset the AES peripheral
-    if (HAL_CRYP_DeInit(&hcryp) != HAL_OK) {
-        free(tmp_out);
-        Error_Handler();
-        return;
-    }
-
-    // Step 2: Configure for CBC mode
-    hcryp.Init.DataType = CRYP_DATATYPE_8B;
-    hcryp.Init.KeySize = CRYP_KEYSIZE_128B;
-    hcryp.Init.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
-    hcryp.Init.ChainingMode = CRYP_CHAINMODE_AES_CBC;
-    hcryp.Init.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
-    hcryp.Init.pKey = (uint32_t*)AES_Key;
-    hcryp.Init.pInitVect = (uint32_t*)iv;
-
-    if (HAL_CRYP_Init(&hcryp) != HAL_OK) {
-        free(tmp_out);
-        Error_Handler();
-        return;
-    }
+	// Step 1: Reset the peripheral (but its donne by HAL_CRYP_AESCBC_Encrypt)
 
     // Step 3: Perform CBC encryption with proper padding
     if (HAL_CRYP_AESCBC_Encrypt(&hcryp, (uint8_t *)msg, msg_len, tmp_out, 1000) != HAL_OK) {
@@ -118,12 +105,8 @@ void tag_cbc_mac_hardware(uint8_t *tag, const uint8_t *msg, size_t msg_len) {
 // Assumes payload is already in place in the packet
 int make_packet(uint8_t *packet, size_t payload_len, uint8_t sender_id, uint32_t serial) {
     size_t packet_len = payload_len + PACKET_HEADER_LENGTH + PACKET_TAG_LENGTH;
-    // Initially, the whole packet header is set to 0s
-    memset(packet, 0, PACKET_HEADER_LENGTH);
     // So is the tag
 	memset(packet + payload_len + PACKET_HEADER_LENGTH, 0, PACKET_TAG_LENGTH);
-
-	// TO DO :  replace the two previous command by properly
 
 	// Set the reserved field to 0
 	packet[0] = 0x00;
@@ -159,10 +142,13 @@ int make_packet(uint8_t *packet, size_t payload_len, uint8_t sender_id, uint32_t
 
 	// For the tag field, you have to calculate the tag. The function call below is correct but
 	// tag_cbc_mac function, calculating the tag, is not implemented.
+	START_CYCLE_COUNT_CBC_MAC();
 	#if USE_CRYPTO == USE_HARDWARE_CRYPTO
     	tag_cbc_mac_hardware(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+		STOP_CYCLE_COUNT_CBC_MAC("CBC-MAC Hardware");
 	#else
 		tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
+		STOP_CYCLE_COUNT_CBC_MAC("CBC-MAC Software");
 	#endif
 
     return packet_len;

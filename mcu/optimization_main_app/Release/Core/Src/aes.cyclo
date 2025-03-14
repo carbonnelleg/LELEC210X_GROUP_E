@@ -1,0 +1,3 @@
+../Core/Src/aes.c:36:6:MX_AES_Init	2
+../Core/Src/aes.c:67:6:HAL_CRYP_MspInit	2
+../Core/Src/aes.c:83:6:HAL_CRYP_MspDeInit	2
