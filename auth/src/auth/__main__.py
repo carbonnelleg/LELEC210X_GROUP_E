@@ -13,6 +13,7 @@ import auth.model_prediction as mp
 import common
 from common.env import load_dotenv
 from common.logging import logger
+from leaderboard.submit import submit
 
 from . import PRINT_PREFIX, packet
 
@@ -181,11 +182,10 @@ def main(
                 key = local_key
             
             #Checking the threshold
-            if myClass == None:
+            if myClass is None:
                 pass
             else:
-                response = requests.post(
-                    f'{hostname}/lelec210x/leaderboard/submit/{key}/{myClass}', timeout=1)
+                submit(myClass, url=hostname, key=key)
                 output.write(f'my class is {myClass}\n')
             # output.write(PRINT_PREFIX + payload.hex() + "\n")
             output.flush()
