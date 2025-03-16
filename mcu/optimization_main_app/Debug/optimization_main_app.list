@@ -5836,7 +5836,7 @@ void MX_TIM3_Init(void)
  80029d2:	2300      	movs	r3, #0
   htim3.Init.Prescaler = 23;
  80029d4:	2117      	movs	r1, #23
- 80029d6:	f04f 0c06 	mov.w	ip, #6
+ 80029d6:	f04f 0c04 	mov.w	ip, #4
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
  80029da:	e9cd 3304 	strd	r3, r3, [sp, #16]
  80029de:	e9cd 3306 	strd	r3, r3, [sp, #24]
@@ -5850,7 +5850,7 @@ void MX_TIM3_Init(void)
  80029ec:	6041      	str	r1, [r0, #4]
  80029ee:	6103      	str	r3, [r0, #16]
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 195*1.5/48;
+  htim3.Init.Period = 195/48;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
  80029f0:	6183      	str	r3, [r0, #24]
