@@ -27,10 +27,10 @@
 *----------------------------------------------------------------------------*/
 
 // General define for setting the MCU in no debug mode
-#define NO_DEBUG 0
+#define NO_DEBUG 1
 
 // Deactivate the need to use the button to trigger the system
-#define NO_BUTTON 0
+#define NO_BUTTON 1
 
 // Deactivate the loop unrolling optimizations that can make the compilation complain
 #define NO_LOOP_UNROLLING 0
