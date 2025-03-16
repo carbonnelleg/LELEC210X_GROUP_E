@@ -23,10 +23,11 @@ from distutils.version import LooseVersion
 import numpy as np
 import pmt
 from gnuradio import gr
+from scipy.signal import savgol_filter
 
-from .utils import logging, measurements_logger
+from .utils import logging, measurements_logger, timeit
 
-
+@timeit
 def cfo_estimation(y, B, R, Fdev):
     """
     Estimates the CFO based on the received signal.
@@ -61,20 +62,19 @@ def cfo_estimation(y, B, R, Fdev):
     
     return cfo_est + cfo_est_off
 
-
+@timeit
 def sto_estimation(y, B, R, Fdev):
     """
     Estimate symbol timing (fractional) based on phase shifts
     """
     phase_function = np.unwrap(np.angle(y))
-    phase_derivative_sign = phase_function[1:] - phase_function[:-1]
-    sign_derivative = np.abs(phase_derivative_sign[1:] - phase_derivative_sign[:-1])
-
+    phase_derivative_1 = savgol_filter(phase_function, window_length=5, polyorder=3, deriv=1)
+    phase_derivative_2 = np.abs(savgol_filter(phase_function, window_length=5, polyorder=3, deriv=2))
+    
     sum_der_saved = -np.inf
     save_i = 0
-
     for i in range(0, R):
-        sum_der = np.sum(sign_derivative[i::R])
+        sum_der = np.sum(phase_derivative_2[i::R])  # Sum every R samples
 
         if sum_der > sum_der_saved:
             sum_der_saved = sum_der
