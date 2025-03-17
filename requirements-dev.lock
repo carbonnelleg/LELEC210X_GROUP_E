@@ -599,7 +599,7 @@ wsproto==1.2.0
 wtforms==3.1.2
     # via flask-wtf
 xgboost==2.1.4
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@673277e510ebd996b62a2fcc76169bf3cce29910
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@420d53387cff54ea1fccca061438d59bdb50a39c
 zipp==3.20.1
     # via importlib-metadata
     # via importlib-resources
