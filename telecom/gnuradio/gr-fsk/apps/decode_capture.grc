@@ -160,7 +160,7 @@ blocks:
     alias: ''
     begin_tag: pmt.PMT_NIL
     comment: ''
-    file: /mnt/c/users/gauti/OneDrive - UCL/Documents/UCL - EPL/Master/Master 1 Q1/LELEC210X/LELEC210X_GROUP_E/telecom/hands_on_measurements/gr-fsk/misc/fsk_capture.mat
+    file: /mnt/c/Users/gauti/OneDrive - UCL/Documents/UCL - EPL/Master/Master 1 Q2/LELEC210X/LELEC210X_GROUP_E/telecom/gnuradio/gr-fsk/misc/fsk_capture.mat
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'

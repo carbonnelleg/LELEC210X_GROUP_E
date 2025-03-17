@@ -88,7 +88,7 @@ blocks:
     alias: ''
     append: 'False'
     comment: ''
-    file: /mnt/d/Pol/Documents/Courses/LELEC2102/Github/LELEC210X/telecom/hands_on_measurements/gr-fsk/misc/fsk_capture.mat
+    file: /mnt/c/Users/gauti/OneDrive - UCL/Documents/UCL - EPL/Master/Master 1 Q2/LELEC210X/LELEC210X_GROUP_E/telecom/gnuradio/gr-fsk/misc/fsk_capture.mat
     type: complex
     unbuffered: 'False'
     vlen: '1'
