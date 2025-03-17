@@ -1,0 +1,18 @@
+44 series
+	0) Opti full 2Mhz
+	1) Opti full 48mhz
+	2) Hands on main app
+	3) Hands on main app
+	4) ?
+	5) 3.3V full opti 2Mhz
+	6) 1.8V full opti 2Mhz
+	7) ?
+	8) ?
+	9) ?
+	10) Solar cell voltage, cell parallel + 10W ring light on top
+	11) Batt vs 1.8_EH -> 3 solar cells, ring light 10W at 13cm
+	12) Drop when lifting light too high (>14cm)
+
+1m70 -> Makita adapter light
+More or less 13W at 10cm from a halogen LED light
+--> 0.4W at 5cm from 1 cell (10V)
