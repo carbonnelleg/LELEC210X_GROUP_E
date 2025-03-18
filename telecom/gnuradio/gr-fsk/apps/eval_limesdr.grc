@@ -310,6 +310,21 @@ blocks:
     coordinate: [720, 388.0]
     rotation: 0
     state: enabled
+- name: fsk_logger_0
+  id: fsk_logger
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    meas_type: eval_radio
+    payload_len: payload_len
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [760, 624.0]
+    rotation: 0
+    state: true
 - name: fsk_onQuery_noise_estimation_0
   id: fsk_onQuery_noise_estimation
   parameters:
@@ -498,7 +513,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1264, 380.0]
+    coordinate: [1352, 380.0]
     rotation: 0
     state: enabled
 
@@ -506,10 +521,14 @@ connections:
 - [dc_blocker_xx_0, '0', low_pass_filter_0, '0']
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
+- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_logger_0, noisePow]
 - [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
+- [fsk_packet_parser_0, '0', fsk_logger_0, payload]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
+- [fsk_packet_parser_0, payloadMetaData, fsk_logger_0, payloadMetaData]
 - [fsk_preamble_detect_0, '0', fsk_synchronization_0, '0']
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
+- [fsk_synchronization_0, syncMetrics, fsk_logger_0, syncMetrics]
 - [limesdr_source_0, '0', dc_blocker_xx_0, '0']
 - [low_pass_filter_0, '0', fsk_onQuery_noise_estimation_0, '0']
 - [low_pass_filter_0, '0', fsk_preamble_detect_0, '0']

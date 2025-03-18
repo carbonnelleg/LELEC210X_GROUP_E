@@ -20,6 +20,7 @@
 install(FILES
     fsk_preamble_detect.block.yml
     fsk_flag_detector.block.yml
+    fsk_logger.block.yml
     fsk_synchronization.block.yml
     fsk_demodulation.block.yml
     fsk_packet_parser.block.yml

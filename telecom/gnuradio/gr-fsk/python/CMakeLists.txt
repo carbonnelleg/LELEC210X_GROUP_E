@@ -37,6 +37,7 @@ GR_PYTHON_INSTALL(
     flag_detector.py
     synchronization.py
     demodulation.py
+    logger.py
     packet_parser.py
     onQuery_noise_estimation.py DESTINATION ${GR_PYTHON_DIR}/fsk
 )

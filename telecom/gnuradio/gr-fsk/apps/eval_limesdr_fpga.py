@@ -158,6 +158,7 @@ class eval_limesdr_fpga(gr.top_block, Qt.QWidget):
         self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, tx_power,Print_metrics)
         self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1], Print_payload)
         self.fsk_onQuery_noise_estimation_0 = fsk.onQuery_noise_estimation(1024,10,noiseQuery)
+        self.fsk_logger_0 = fsk.logger('eval_radio', payload_len)
         self.fsk_flag_detector_0 = fsk.flag_detector(data_rate,  samp_rate, packet_len, Enable_detection)
         self.fsk_demodulation_0 = fsk.demodulation(data_rate, fdev, samp_rate, payload_len, crc_len)
         self.dc_blocker_xx_0 = filter.dc_blocker_cc(1024, True)
@@ -166,11 +167,15 @@ class eval_limesdr_fpga(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
+        self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'NoisePow'), (self.fsk_logger_0, 'noisePow'))
         self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'NoisePow'), (self.fsk_synchronization_0, 'NoisePow'))
+        self.msg_connect((self.fsk_packet_parser_0, 'payloadMetaData'), (self.fsk_logger_0, 'payloadMetaData'))
+        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.connect((self.dc_blocker_xx_0, 0), (self.fsk_flag_detector_0, 0))
         self.connect((self.dc_blocker_xx_0, 0), (self.fsk_onQuery_noise_estimation_0, 0))
         self.connect((self.fsk_demodulation_0, 0), (self.fsk_packet_parser_0, 0))
         self.connect((self.fsk_flag_detector_0, 0), (self.fsk_synchronization_0, 0))
+        self.connect((self.fsk_packet_parser_0, 0), (self.fsk_logger_0, 'payload'))
         self.connect((self.fsk_packet_parser_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.fsk_synchronization_0, 0), (self.fsk_demodulation_0, 0))
         self.connect((self.limesdr_fpga_source_0, 0), (self.dc_blocker_xx_0, 0))

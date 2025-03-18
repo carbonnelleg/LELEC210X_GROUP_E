@@ -33,6 +33,7 @@ except ImportError:
 # import any pure python here
 from .demodulation import demodulation  # noqa: F401
 from .flag_detector import flag_detector  # noqa: F401
+from .logger import logger # noqa: F401
 from .onQuery_noise_estimation import onQuery_noise_estimation  # noqa: F401
 from .packet_parser import packet_parser  # noqa: F401
 from .preamble_detect import preamble_detect  # noqa: F401

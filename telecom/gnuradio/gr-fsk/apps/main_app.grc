@@ -47,7 +47,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1208, 172.0]
+    coordinate: [1208, 20.0]
     rotation: 0
     state: true
 - name: K_threshold
@@ -68,7 +68,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1336, 4.0]
+    coordinate: [1424, 124.0]
     rotation: 0
     state: enabled
 - name: K_threshold
@@ -97,7 +97,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [912, 564.0]
+    coordinate: [1208, 116.0]
     rotation: 0
     state: true
 - name: Print_payload
@@ -114,7 +114,24 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1072, 564.0]
+    coordinate: [1208, 212.0]
+    rotation: 0
+    state: true
+- name: Save_measurements
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: ''
+    label: ''
+    'true': '1'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1208, 308.0]
     rotation: 0
     state: true
 - name: carrier_freq
@@ -215,7 +232,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1336, 212.0]
+    coordinate: [1424, 332.0]
     rotation: 0
     state: true
 - name: packet_len
@@ -272,7 +289,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1208, 52.0]
+    coordinate: [1424, 12.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -311,7 +328,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1336, 132.0]
+    coordinate: [1424, 252.0]
     rotation: 0
     state: true
 - name: dc_blocker_xx_0
@@ -349,7 +366,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [712, 404.0]
+    coordinate: [784, 436.0]
     rotation: 0
     state: enabled
 - name: fsk_flag_detector_0
@@ -371,6 +388,21 @@ blocks:
     coordinate: [144, 396.0]
     rotation: 0
     state: enabled
+- name: fsk_logger_0
+  id: fsk_logger
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    meas_type: main_app
+    payload_len: payload_len
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1432, 616.0]
+    rotation: 0
+    state: true
 - name: fsk_onQuery_noise_estimation_0
   id: fsk_onQuery_noise_estimation
   parameters:
@@ -406,7 +438,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [976, 412.0]
+    coordinate: [1048, 444.0]
     rotation: 0
     state: enabled
 - name: fsk_synchronization_0
@@ -428,7 +460,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [456, 396.0]
+    coordinate: [448, 400.0]
     rotation: 0
     state: enabled
 - name: limesdr_fpga_source_0
@@ -518,7 +550,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1272, 396.0]
+    coordinate: [1432, 452.0]
     rotation: 0
     state: enabled
 
@@ -528,9 +560,13 @@ connections:
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
 - [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
+- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_logger_0, noisePow]
 - [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
+- [fsk_packet_parser_0, '0', fsk_logger_0, payload]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
+- [fsk_packet_parser_0, payloadMetaData, fsk_logger_0, payloadMetaData]
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
+- [fsk_synchronization_0, syncMetrics, fsk_logger_0, syncMetrics]
 - [limesdr_fpga_source_0, '0', dc_blocker_xx_0, '0']
 
 metadata:

@@ -62,20 +62,25 @@ class decode_trace(gr.top_block):
         self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, 0,True)
         self.fsk_preamble_detect_0 = fsk.preamble_detect(data_rate, fdev, samp_rate, packet_len, detect_threshold, 1)
         self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1], True)
+        self.fsk_logger_0 = fsk.logger('capture', payload_len)
         self.fsk_demodulation_0 = fsk.demodulation(data_rate, fdev, samp_rate, payload_len, crc_len)
         self.blocks_var_to_msg_0 = blocks.var_to_msg_pair('estimated_noise_power')
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, samp_rate,True)
-        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, '/mnt/c/users/gauti/OneDrive - UCL/Documents/UCL - EPL/Master/Master 1 Q1/LELEC210X/LELEC210X_GROUP_E/telecom/hands_on_measurements/gr-fsk/misc/fsk_capture.mat', False, 0, 0)
+        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, '/mnt/c/Users/gauti/OneDrive - UCL/Documents/UCL - EPL/Master/Master 1 Q2/LELEC210X/LELEC210X_GROUP_E/telecom/gnuradio/gr-fsk/misc/fsk_capture.mat', False, 0, 0)
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
 
 
         ##################################################
         # Connections
         ##################################################
+        self.msg_connect((self.blocks_var_to_msg_0, 'msgout'), (self.fsk_logger_0, 'noisePow'))
         self.msg_connect((self.blocks_var_to_msg_0, 'msgout'), (self.fsk_synchronization_0, 'NoisePow'))
+        self.msg_connect((self.fsk_packet_parser_0, 'payloadMetaData'), (self.fsk_logger_0, 'payloadMetaData'))
+        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.low_pass_filter_0, 0))
         self.connect((self.fsk_demodulation_0, 0), (self.fsk_packet_parser_0, 0))
+        self.connect((self.fsk_packet_parser_0, 0), (self.fsk_logger_0, 'payload'))
         self.connect((self.fsk_packet_parser_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.fsk_preamble_detect_0, 0), (self.fsk_synchronization_0, 0))
         self.connect((self.fsk_synchronization_0, 0), (self.fsk_demodulation_0, 0))

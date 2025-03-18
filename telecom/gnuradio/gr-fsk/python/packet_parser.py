@@ -92,6 +92,7 @@ class packet_parser(gr.basic_block):
         self.log_payload = log_payload
 
         self.packet_len = self.hdr_len + self.payload_len + self.crc_len
+        # address is Sync word in our modulation scheme
         self.address = address
 
         gr.basic_block.__init__(

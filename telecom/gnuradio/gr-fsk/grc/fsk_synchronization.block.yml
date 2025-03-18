@@ -51,6 +51,7 @@ parameters:
 inputs:
   - label: Input
     dtype: complex
+
   - domain: message
     label: NoisePow
     id: noisePow
@@ -58,6 +59,10 @@ inputs:
 outputs:
   - label: Output
     dtype: complex
+  
+  - label: syncMetrics
+    id: syncMetrics
+    domain: message
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

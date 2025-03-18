@@ -43,6 +43,10 @@ outputs:
   - label: Output
     dtype: byte
     vlen: ${payload_len}
+  
+  - label: payloadMetaData
+    id: payloadMetaData
+    domain: message
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
