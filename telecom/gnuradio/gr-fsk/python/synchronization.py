@@ -25,7 +25,7 @@ import pmt
 from gnuradio import gr
 from scipy.signal import savgol_filter
 
-from .utils import logging, measurements_logger, timeit
+from .utils import timeit
 
 @timeit
 def cfo_estimation(y, B, R, Fdev):
@@ -95,25 +95,26 @@ class synchronization(gr.basic_block):
         self.osr = int(fsamp / drate)
         self.hdr_len = hdr_len
         self.packet_len = packet_len  # in bytes
-        self.estimated_noise_power = 0
+        self.estimated_noise_power = 1e-5
         self.tx_power = tx_power
         self.enable_log = enable_log
 
         # Remaining number of samples in the current packet
         self.rem_samples = 0
-        self.init_sto = 0
+        self.sto = 0
         self.cfo = 0.0
         self.t0 = 0.0
         self.power_est = None
-        self.power_est = None
-        self.estimated_noise_power = 0
 
         gr.basic_block.__init__(
             self, name="Synchronization", in_sig=[np.complex64], out_sig=[np.complex64]
         )
-        self.logger = logging.getLogger("sync")
-        self.message_port_register_in(pmt.intern("NoisePow"))
-        self.set_msg_handler(pmt.intern("NoisePow"), self.handle_msg)
+
+        self.message_port_register_in(pmt.intern("noisePow"))
+        self.set_msg_handler(pmt.intern("noisePow"), self.handle_msg)
+        
+        self.message_port_register_out(pmt.intern("syncMetrics"))
+        self.message_port_register_out(pmt.intern("powerMetrics"))
 
         self.gr_version = gr.version()
 
@@ -174,17 +175,18 @@ class synchronization(gr.basic_block):
             y_cfo = np.exp(-1j * 2 * np.pi * self.cfo * t) * y
             self.t0 = t[-1]
 
-            sto = sto_estimation(y_cfo, self.drate, self.osr, self.fdev)
+            self.sto = sto_estimation(y_cfo, self.drate, self.osr, self.fdev)
 
-            self.init_sto = sto
             self.power_est = None
             self.rem_samples = (self.packet_len + 1) * 8 * self.osr
-            if self.enable_log:
-                self.logger.info(
-                    f"new preamble detected @ {self.nitems_read(0) + sto} (CFO {self.cfo:.2f} Hz, STO {sto})"
-                )
-            measurements_logger.info(f"CFO={self.cfo},STO={sto}")
-            self.consume_each(sto)  # drop *sto* samples to align the buffer
+
+            sync_metrics = pmt.make_dict()
+            sync_metrics = pmt.dict_add(sync_metrics, pmt.intern("preamble_start"), pmt.from_long(self.nitems_read(0) + self.sto))
+            sync_metrics = pmt.dict_add(sync_metrics, pmt.intern("cfo"), pmt.from_double(self.cfo))
+            sync_metrics = pmt.dict_add(sync_metrics, pmt.intern("sto"), pmt.from_long(self.sto))
+            self.message_port_pub(pmt.intern("syncMetrics"), sync_metrics)
+
+            self.consume_each(self.sto)  # drop *sto* samples to align the buffer
             return 0  # ... but we do not transmit data to the demodulation stage
         else:
             win_size = min(len(output_items[0]), self.rem_samples)
@@ -192,16 +194,12 @@ class synchronization(gr.basic_block):
 
             if self.power_est is None and win_size >= 256:
                 self.power_est = np.var(y)
-                SNR_est = (
-                    self.power_est - self.estimated_noise_power
-                ) / self.estimated_noise_power
-                if self.enable_log:
-                    self.logger.info(
-                        f"estimated SNR: {10 * np.log10(SNR_est):.2f} dB ({len(y)} samples, Esti. RX power: {self.power_est:.2e},  TX indicative Power: {self.tx_power} dB)"
-                    )
-                measurements_logger.info(
-                    f"SNRdB={10 * np.log10(SNR_est):.2f},TXPdB={self.tx_power}"
-                )
+                SNR_est = (self.power_est - self.estimated_noise_power) / self.estimated_noise_power
+                power_metrics = pmt.make_dict()
+                power_metrics = pmt.dict_add(power_metrics, pmt.intern("snr"), pmt.from_double(10 * np.log10(SNR_est)))
+                power_metrics = pmt.dict_add(power_metrics, pmt.intern("rxp"), pmt.from_double(self.power_est))
+                power_metrics = pmt.dict_add(power_metrics, pmt.intern("txp"), pmt.from_double(self.tx_power))
+                self.message_port_pub(pmt.intern("powerMetrics"), power_metrics)
 
             # Correct CFO before transferring samples to demodulation stage
             t = self.t0 + np.arange(1, len(y) + 1) / (self.drate * self.osr)
@@ -216,7 +214,7 @@ class synchronization(gr.basic_block):
             if (
                 self.rem_samples == 0
             ):  # Thow away the extra OSR samples from the preamble detection stage
-                self.consume_each(win_size + self.osr - self.init_sto)
+                self.consume_each(win_size + self.osr - self.sto)
             else:
                 self.consume_each(win_size)
 

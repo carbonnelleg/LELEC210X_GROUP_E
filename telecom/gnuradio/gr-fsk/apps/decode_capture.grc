@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: no_gui
     hier_block_src_path: '.:'
-    id: decode_trace
+    id: decode_capture
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -239,6 +239,8 @@ blocks:
     comment: ''
     meas_type: capture
     payload_len: payload_len
+    print_metrics: 'True'
+    print_payload: 'True'
   states:
     bus_sink: false
     bus_source: false

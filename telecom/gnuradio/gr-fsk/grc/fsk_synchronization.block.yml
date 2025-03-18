@@ -53,7 +53,7 @@ inputs:
     dtype: complex
 
   - domain: message
-    label: NoisePow
+    label: noisePow
     id: noisePow
 
 outputs:
@@ -62,6 +62,10 @@ outputs:
   
   - label: syncMetrics
     id: syncMetrics
+    domain: message
+  
+  - label: powerMetrics
+    id: powerMetrics
     domain: message
 
 #  'file_format' specifies the version of the GRC yml format used in the file

@@ -4,21 +4,33 @@ category: "[FSK]"
 
 templates:
   imports: import fsk
-  make: fsk.logger(${meas_type}, ${payload_len})
+  make: fsk.logger(${payload_len}, ${print_payload}, ${print_metrics}, ${meas_type}, ${save_measurements})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
 #     * id (makes the value accessible as \$keyname, e.g. in the make entry)
 #     * label (label shown in the GUI)
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
-parameters:
+parameters:  
+  - id: payload_len
+    label: Payload Length (# bytes)
+    dtype: int
+  
+  - id: print_payload
+    label: Print the demodulated payload
+    dtype: int
+  
+  - id: print_metrics
+    label: Print packet metrics
+    dtype: int
+  
   - id: meas_type
     label: Measurement Type
     dtype: string
     default: "main_app"
   
-  - id: payload_len
-    label: Payload Length (# bytes)
+  - id: save_measurements
+    label: Save measurements data
     dtype: int
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
@@ -29,20 +41,22 @@ parameters:
 #      * vlen (optional - data stream vector length. Default is 1)
 #      * optional (optional - set to 1 for optional inputs. Default is 0)
 inputs:
-  - id: noisePow
-    label: noisePow
-    domain: message
-
-  - id: syncMetrics
+  - domain: message
+    optional: 1
+    id: syncMetrics
     label: syncMetrics
-    domain: message
+  
+  - domain: message
+    optional: 1
+    id: powerMetrics
+    label: powerMetrics
 
-  - id: payloadMetaData
+  - domain: message
+    optional: 1
+    id: payloadMetaData
     label: payloadMetaData
-    domain: message
 
-  - id: payload
-    label: payload
+  - label: payload
     dtype: byte
     vlen: ${payload_len}
     domain: stream

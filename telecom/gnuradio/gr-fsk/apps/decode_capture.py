@@ -26,7 +26,7 @@ import fsk
 
 
 
-class decode_trace(gr.top_block):
+class decode_capture(gr.top_block):
 
     def __init__(self):
         gr.top_block.__init__(self, "LELEC2102 - Decode Capture", catch_exceptions=True)
@@ -161,7 +161,7 @@ class decode_trace(gr.top_block):
 
 
 
-def main(top_block_cls=decode_trace, options=None):
+def main(top_block_cls=decode_capture, options=None):
     tb = top_block_cls()
 
     def sig_handler(sig=None, frame=None):

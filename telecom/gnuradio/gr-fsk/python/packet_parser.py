@@ -22,8 +22,7 @@ from distutils.version import LooseVersion
 
 import numpy as np
 from gnuradio import gr
-
-from .utils import logging, measurements_logger
+import pmt
 
 
 def reflect_data(x, width):
@@ -97,11 +96,12 @@ class packet_parser(gr.basic_block):
 
         gr.basic_block.__init__(
             self,
-            name="packet_parser",
+            name="Packet Parser",
             in_sig=[np.uint8],
-            out_sig=[(np.uint8, self.payload_len)],
+            out_sig=[(np.uint8, self.payload_len), (np.uint8, self.payload_len)],
         )
-        self.logger = logging.getLogger("parser")
+
+        self.message_port_register_out(pmt.intern("payloadMetaData"))
 
         self.gr_version = gr.version()
 
@@ -135,8 +135,6 @@ class packet_parser(gr.basic_block):
 
         b = np.unpackbits(input_bytes)  # bytes to bits
 
-        # print(b)
-
         b_hdr = b[: self.hdr_len * 8]
         v = np.abs(
             np.correlate(b_hdr * 2 - 1, np.array(self.address) * 2 - 1, mode="full")
@@ -162,26 +160,19 @@ class packet_parser(gr.basic_block):
         )
         self.nb_packet += 1
         is_correct = all(crc == crc_verif)
-        measurements_logger.info(
-            f"packet_number={self.nb_packet},correct={is_correct},payload=[{','.join(map(str, payload))}]"
-        )
+
         if is_correct:
-            if self.log_payload:
-                self.logger.info(
-                    f"packet successfully demodulated: {payload} (CRC: {crc})"
-                )
             output_items[0][: self.payload_len] = payload
-            self.logger.info(
-                f"{self.nb_packet} packets received with {self.nb_error} error(s)"
-            )
-            return 1
         else:
-            if self.log_payload:
-                self.logger.error(
-                    f"incorrect CRC, packet dropped: {payload} (CRC: {crc})"
-                )
             self.nb_error += 1
-            self.logger.info(
-                f"{self.nb_packet} packets received with {self.nb_error} error(s)"
-            )
-            return 0
+
+        payload_metadata = pmt.make_dict()
+        payload_metadata = pmt.dict_add(payload_metadata, pmt.intern("nb_packet"), pmt.from_long(self.nb_packet))
+        payload_metadata = pmt.dict_add(payload_metadata, pmt.intern("is_correct"), pmt.from_long(is_correct))
+        payload_metadata = pmt.dict_add(payload_metadata, pmt.intern("nb_error"), pmt.from_long(self.nb_error))
+        payload_metadata = pmt.dict_add(payload_metadata, pmt.intern("crc"), pmt.from_long(crc[0]))
+        self.message_port_pub(pmt.intern("payloadMetaData"), payload_metadata)
+        
+        output_items[1][: self.payload_len] = payload
+
+        return 1

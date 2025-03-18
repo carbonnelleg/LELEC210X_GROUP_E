@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: decode_sdr
+    id: main_app
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -80,60 +80,9 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 276.0]
+    coordinate: [960, 276.0]
     rotation: 0
     state: disabled
-- name: Print_metrics
-  id: variable_qtgui_check_box
-  parameters:
-    comment: ''
-    'false': '0'
-    gui_hint: ''
-    label: ''
-    'true': '1'
-    type: int
-    value: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1208, 116.0]
-    rotation: 0
-    state: true
-- name: Print_payload
-  id: variable_qtgui_check_box
-  parameters:
-    comment: ''
-    'false': '0'
-    gui_hint: ''
-    label: ''
-    'true': '1'
-    type: int
-    value: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1208, 212.0]
-    rotation: 0
-    state: true
-- name: Save_measurements
-  id: variable_qtgui_check_box
-  parameters:
-    comment: ''
-    'false': '0'
-    gui_hint: ''
-    label: ''
-    'true': '1'
-    type: int
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1208, 308.0]
-    rotation: 0
-    state: true
 - name: carrier_freq
   id: variable
   parameters:
@@ -244,7 +193,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 148.0]
+    coordinate: [960, 148.0]
     rotation: 0
     state: true
 - name: payload_len
@@ -256,7 +205,41 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 20.0]
+    coordinate: [960, 20.0]
+    rotation: 0
+    state: true
+- name: print_metrics
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: ''
+    label: ''
+    'true': '1'
+    type: int
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1208, 116.0]
+    rotation: 0
+    state: true
+- name: print_payload
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: ''
+    label: ''
+    'true': '1'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1208, 212.0]
     rotation: 0
     state: true
 - name: rx_gain
@@ -268,7 +251,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 212.0]
+    coordinate: [960, 212.0]
     rotation: 0
     state: disabled
 - name: rx_gain
@@ -304,6 +287,23 @@ blocks:
     coordinate: [664, 20.0]
     rotation: 0
     state: enabled
+- name: save_measurements
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: ''
+    label: ''
+    'true': '1'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1208, 308.0]
+    rotation: 0
+    state: true
 - name: spectrogram_len
   id: variable
   parameters:
@@ -313,7 +313,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1056, 84.0]
+    coordinate: [960, 84.0]
     rotation: 0
     state: true
 - name: tx_power
@@ -396,11 +396,14 @@ blocks:
     comment: ''
     meas_type: main_app
     payload_len: payload_len
+    print_metrics: print_metrics
+    print_payload: print_payload
+    save_measurements: save_measurements
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1432, 616.0]
+    coordinate: [1016, 632.0]
     rotation: 0
     state: true
 - name: fsk_onQuery_noise_estimation_0
@@ -430,7 +433,7 @@ blocks:
     comment: ''
     crc_len: crc_len
     hdr_len: hdr_len
-    log_payload: Print_payload
+    log_payload: print_payload
     maxoutbuf: '0'
     minoutbuf: '0'
     payload_len: payload_len
@@ -448,7 +451,7 @@ blocks:
     alias: ''
     comment: ''
     drate: data_rate
-    enable_log: Print_metrics
+    enable_log: print_metrics
     fdev: fdev
     fsamp: samp_rate
     hdr_len: hdr_len
@@ -560,12 +563,12 @@ connections:
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
 - [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
-- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_logger_0, noisePow]
-- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
-- [fsk_packet_parser_0, '0', fsk_logger_0, payload]
+- [fsk_onQuery_noise_estimation_0, noisePow, fsk_synchronization_0, noisePow]
+- [fsk_packet_parser_0, '0', fsk_logger_0, '0']
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
 - [fsk_packet_parser_0, payloadMetaData, fsk_logger_0, payloadMetaData]
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
+- [fsk_synchronization_0, powerMetrics, fsk_logger_0, powerMetrics]
 - [fsk_synchronization_0, syncMetrics, fsk_logger_0, syncMetrics]
 - [limesdr_fpga_source_0, '0', dc_blocker_xx_0, '0']
 
