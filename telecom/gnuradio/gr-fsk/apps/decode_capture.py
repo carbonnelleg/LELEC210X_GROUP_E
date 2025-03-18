@@ -75,8 +75,8 @@ class decode_capture(gr.top_block):
         ##################################################
         self.msg_connect((self.blocks_var_to_msg_0, 'msgout'), (self.fsk_synchronization_0, 'noisePow'))
         self.msg_connect((self.fsk_packet_parser_0, 'payloadMetaData'), (self.fsk_logger_0, 'payloadMetaData'))
-        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.msg_connect((self.fsk_synchronization_0, 'powerMetrics'), (self.fsk_logger_0, 'powerMetrics'))
+        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))
         self.connect((self.blocks_throttle_0, 0), (self.low_pass_filter_0, 0))
         self.connect((self.fsk_demodulation_0, 0), (self.fsk_packet_parser_0, 0))

@@ -16,7 +16,7 @@ def get_measurements_logger(measurement_type: str ='main_app') -> logging.Logger
     :param measurement_type: Type of measurement (e.g., 'main_app', 'eval_radio').
     :return: Configured Logger object.
     """
-    log_dir = 'src/telecom/hands_on_measurements/data'
+    log_dir = 'hands_on_measurements/data'
     os.makedirs(log_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime('t%Y%m%d_%H%M%S')
