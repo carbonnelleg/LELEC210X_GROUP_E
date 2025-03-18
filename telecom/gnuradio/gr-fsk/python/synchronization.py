@@ -88,7 +88,7 @@ class synchronization(gr.basic_block):
     docstring for block synchronization
     """
 
-    def __init__(self, drate, fdev, fsamp, hdr_len, packet_len, tx_power, enable_log):
+    def __init__(self, drate, fdev, fsamp, hdr_len, packet_len, tx_power):
         self.drate = drate
         self.fdev = fdev
         self.fsamp = fsamp
@@ -97,7 +97,6 @@ class synchronization(gr.basic_block):
         self.packet_len = packet_len  # in bytes
         self.estimated_noise_power = 1e-5
         self.tx_power = tx_power
-        self.enable_log = enable_log
 
         # Remaining number of samples in the current packet
         self.rem_samples = 0
@@ -156,9 +155,6 @@ class synchronization(gr.basic_block):
 
         return ninput_items_required
 
-    def set_enable_log(self, enable_log):
-        self.enable_log = enable_log
-
     def handle_msg(self, msg):
         self.estimated_noise_power = pmt.to_double(msg)
 
@@ -197,7 +193,7 @@ class synchronization(gr.basic_block):
                 SNR_est = (self.power_est - self.estimated_noise_power) / self.estimated_noise_power
                 power_metrics = pmt.make_dict()
                 power_metrics = pmt.dict_add(power_metrics, pmt.intern("snr"), pmt.from_double(10 * np.log10(SNR_est)))
-                power_metrics = pmt.dict_add(power_metrics, pmt.intern("rxp"), pmt.from_double(self.power_est))
+                power_metrics = pmt.dict_add(power_metrics, pmt.intern("rxp"), pmt.from_double(10 * np.log10(self.power_est)))
                 power_metrics = pmt.dict_add(power_metrics, pmt.intern("txp"), pmt.from_double(self.tx_power))
                 self.message_port_pub(pmt.intern("powerMetrics"), power_metrics)
 

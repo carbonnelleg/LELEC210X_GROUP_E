@@ -1,5 +1,6 @@
 from distutils.version import LooseVersion
 
+from collections import deque
 from gnuradio import gr
 import numpy as np
 import pmt
@@ -30,6 +31,10 @@ class logger(gr.basic_block):
         self.is_correct = False
         self.nb_error = 0
         self.crc = 0
+
+        # Msg queues
+        self.sync_queue = deque()
+        self.power_queue = deque()
         
         gr.basic_block.__init__(
             self,
@@ -57,22 +62,33 @@ class logger(gr.basic_block):
             self.forecast = self.forecast_v310
     
     def parse_sync_metrics(self, msg):
-        self.preamble_start = pmt.to_long(pmt.dict_ref(msg, pmt.intern("preamble_start"), pmt.PMT_NIL))
-        self.cfo = pmt.to_double(pmt.dict_ref(msg, pmt.intern("cfo"), pmt.PMT_NIL))
-        self.sto = pmt.to_long(pmt.dict_ref(msg, pmt.intern("sto"), pmt.PMT_NIL))
+        preamble_start = pmt.to_long(pmt.dict_ref(msg, pmt.intern("preamble_start"), pmt.PMT_NIL))
+        cfo = pmt.to_double(pmt.dict_ref(msg, pmt.intern("cfo"), pmt.PMT_NIL))
+        sto = pmt.to_long(pmt.dict_ref(msg, pmt.intern("sto"), pmt.PMT_NIL))
+        self.sync_queue.append((preamble_start, cfo, sto))
     
     def parse_power_metrics(self, msg):
-        self.snr = pmt.to_double(pmt.dict_ref(msg, pmt.intern("snr"), pmt.PMT_NIL))
-        self.rxp = pmt.to_double(pmt.dict_ref(msg, pmt.intern("rxp"), pmt.PMT_NIL))
-        self.txp = pmt.to_double(pmt.dict_ref(msg, pmt.intern("txp"), pmt.PMT_NIL))
+        snr = pmt.to_double(pmt.dict_ref(msg, pmt.intern("snr"), pmt.PMT_NIL))
+        rxp = pmt.to_double(pmt.dict_ref(msg, pmt.intern("rxp"), pmt.PMT_NIL))
+        txp = pmt.to_double(pmt.dict_ref(msg, pmt.intern("txp"), pmt.PMT_NIL))
+        self.power_queue.append((snr, rxp, txp))
 
     def parse_payload_metadata(self, msg):
         self.nb_packet = pmt.to_long(pmt.dict_ref(msg, pmt.intern("nb_packet"), pmt.PMT_NIL))
         self.is_correct = bool(pmt.to_long(pmt.dict_ref(msg, pmt.intern("is_correct"), pmt.PMT_NIL)))
         self.nb_error = pmt.to_long(pmt.dict_ref(msg, pmt.intern("nb_error"), pmt.PMT_NIL))
         self.crc = pmt.to_long(pmt.dict_ref(msg, pmt.intern("crc"), pmt.PMT_NIL))
+        
+        # Retrieve the oldest synchronized values
+        if self.sync_queue and self.power_queue:
+            self.preamble_start, self.cfo, self.sto = self.sync_queue.popleft()
+            self.snr, self.rxp, self.txp = self.power_queue.popleft()
+        else:
+            return
+    
     
     def set_print_payload(self, print_payload):
+        print("changed print payload")
         self.print_payload = print_payload
     
     def set_print_metrics(self, print_metrics):
@@ -123,7 +139,7 @@ class logger(gr.basic_block):
                 f"new preamble detected @ {self.preamble_start} (CFO {self.cfo:.2f} Hz, STO {self.sto})"
             )
             self.logger.info(
-                f"estimated SNR: {self.snr:.2f} dB, Esti. RX power: {self.rxp:.2e},  TX indicative Power: {self.txp} dB)"
+                f"estimated SNR: {self.snr:.2f} dB, Esti. RX power: {self.rxp:.2f} dB,  TX indicative Power: {self.txp} dB)"
             )
 
         # Saving measurement data if enabled
@@ -131,9 +147,9 @@ class logger(gr.basic_block):
             self.measurements_logger.info(
                 f"packet_number={self.nb_packet}, correct={self.is_correct}, payload=[{','.join(map(str, payload))}]"
             )
-            self.measurements_logger.info(f"CFO={self.cfo}, STO={self.sto}")
+            self.measurements_logger.info(f"CFO={self.cfo:.4f}, STO={self.sto}")
             self.measurements_logger.info(
-                f"SNRdB={self.snr:.2f}, RXPdB={self.rxp:.2e}, TXPdB={self.txp}"
+                f"SNRdB={self.snr:.4f}, RXPdB={self.rxp:.4f}, TXPdB={self.txp}"
             )
 
         return 0

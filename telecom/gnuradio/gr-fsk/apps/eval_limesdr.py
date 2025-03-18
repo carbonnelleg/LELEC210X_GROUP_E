@@ -71,15 +71,16 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         self.data_rate = data_rate = 50e3
         self.crc_len = crc_len = 1
         self.tx_power = tx_power = 0
+        self.save_measurements = save_measurements = 1
         self.samp_rate = samp_rate = data_rate*8
         self.rx_gain = rx_gain = 10
+        self.print_payload = print_payload = 1
+        self.print_metrics = print_metrics = 1
         self.packet_len = packet_len = hdr_len+payload_len+crc_len
         self.noiseQuery = noiseQuery = 0
-        self.fdev = fdev = data_rate/4
+        self.fdev = fdev = data_rate/2
         self.detect_threshold_entry = detect_threshold_entry = (1e-3)
         self.carrier_freq = carrier_freq = 868e6
-        self.Print_payload = Print_payload = 1
-        self.Print_metrics = Print_metrics = 1
         self.Enable_detection = Enable_detection = 0
 
         ##################################################
@@ -93,9 +94,30 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         self._tx_power_line_edit.returnPressed.connect(
             lambda: self.set_tx_power(int(str(self._tx_power_line_edit.text()))))
         self.top_layout.addWidget(self._tx_power_tool_bar)
+        _save_measurements_check_box = Qt.QCheckBox("'save_measurements'")
+        self._save_measurements_choices = {True: 1, False: 0}
+        self._save_measurements_choices_inv = dict((v,k) for k,v in self._save_measurements_choices.items())
+        self._save_measurements_callback = lambda i: Qt.QMetaObject.invokeMethod(_save_measurements_check_box, "setChecked", Qt.Q_ARG("bool", self._save_measurements_choices_inv[i]))
+        self._save_measurements_callback(self.save_measurements)
+        _save_measurements_check_box.stateChanged.connect(lambda i: self.set_save_measurements(self._save_measurements_choices[bool(i)]))
+        self.top_layout.addWidget(_save_measurements_check_box)
         self._rx_gain_range = Range(0, 73, 1, 10, 200)
         self._rx_gain_win = RangeWidget(self._rx_gain_range, self.set_rx_gain, "'rx_gain'", "counter_slider", int, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._rx_gain_win)
+        _print_payload_check_box = Qt.QCheckBox("'print_payload'")
+        self._print_payload_choices = {True: 1, False: 0}
+        self._print_payload_choices_inv = dict((v,k) for k,v in self._print_payload_choices.items())
+        self._print_payload_callback = lambda i: Qt.QMetaObject.invokeMethod(_print_payload_check_box, "setChecked", Qt.Q_ARG("bool", self._print_payload_choices_inv[i]))
+        self._print_payload_callback(self.print_payload)
+        _print_payload_check_box.stateChanged.connect(lambda i: self.set_print_payload(self._print_payload_choices[bool(i)]))
+        self.top_layout.addWidget(_print_payload_check_box)
+        _print_metrics_check_box = Qt.QCheckBox("'print_metrics'")
+        self._print_metrics_choices = {True: 1, False: 0}
+        self._print_metrics_choices_inv = dict((v,k) for k,v in self._print_metrics_choices.items())
+        self._print_metrics_callback = lambda i: Qt.QMetaObject.invokeMethod(_print_metrics_check_box, "setChecked", Qt.Q_ARG("bool", self._print_metrics_choices_inv[i]))
+        self._print_metrics_callback(self.print_metrics)
+        _print_metrics_check_box.stateChanged.connect(lambda i: self.set_print_metrics(self._print_metrics_choices[bool(i)]))
+        self.top_layout.addWidget(_print_metrics_check_box)
         _noiseQuery_push_button = Qt.QPushButton('Noise estimation query')
         _noiseQuery_push_button = Qt.QPushButton('Noise estimation query')
         self._noiseQuery_choices = {'Pressed': 1, 'Released': 0}
@@ -109,20 +131,6 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         self._detect_threshold_entry_line_edit.returnPressed.connect(
             lambda: self.set_detect_threshold_entry(eng_notation.str_to_num(str(self._detect_threshold_entry_line_edit.text()))))
         self.top_layout.addWidget(self._detect_threshold_entry_tool_bar)
-        _Print_payload_check_box = Qt.QCheckBox("'Print_payload'")
-        self._Print_payload_choices = {True: 1, False: 0}
-        self._Print_payload_choices_inv = dict((v,k) for k,v in self._Print_payload_choices.items())
-        self._Print_payload_callback = lambda i: Qt.QMetaObject.invokeMethod(_Print_payload_check_box, "setChecked", Qt.Q_ARG("bool", self._Print_payload_choices_inv[i]))
-        self._Print_payload_callback(self.Print_payload)
-        _Print_payload_check_box.stateChanged.connect(lambda i: self.set_Print_payload(self._Print_payload_choices[bool(i)]))
-        self.top_layout.addWidget(_Print_payload_check_box)
-        _Print_metrics_check_box = Qt.QCheckBox("'Print_metrics'")
-        self._Print_metrics_choices = {True: 1, False: 0}
-        self._Print_metrics_choices_inv = dict((v,k) for k,v in self._Print_metrics_choices.items())
-        self._Print_metrics_callback = lambda i: Qt.QMetaObject.invokeMethod(_Print_metrics_check_box, "setChecked", Qt.Q_ARG("bool", self._Print_metrics_choices_inv[i]))
-        self._Print_metrics_callback(self.Print_metrics)
-        _Print_metrics_check_box.stateChanged.connect(lambda i: self.set_Print_metrics(self._Print_metrics_choices[bool(i)]))
-        self.top_layout.addWidget(_Print_metrics_check_box)
         _Enable_detection_check_box = Qt.QCheckBox("'Enable_detection'")
         self._Enable_detection_choices = {True: 1, False: 0}
         self._Enable_detection_choices_inv = dict((v,k) for k,v in self._Enable_detection_choices.items())
@@ -148,11 +156,11 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         self.limesdr_source_0.set_gain(rx_gain,0)
         self.limesdr_source_0.set_antenna(255,0)
         self.limesdr_source_0.calibrate(2.5e6, 0)
-        self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, tx_power,Print_metrics)
+        self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, tx_power)
         self.fsk_preamble_detect_0 = fsk.preamble_detect(data_rate, fdev, samp_rate, packet_len, detect_threshold_entry, Enable_detection)
-        self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1], Print_payload)
+        self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1])
         self.fsk_onQuery_noise_estimation_0 = fsk.onQuery_noise_estimation(1024,10,noiseQuery)
-        self.fsk_logger_0 = fsk.logger('eval_radio', payload_len)
+        self.fsk_logger_0 = fsk.logger(payload_len, print_payload, print_metrics, 'eval_radio', save_measurements)
         self.fsk_demodulation_0 = fsk.demodulation(data_rate, fdev, samp_rate, payload_len, crc_len)
         self.dc_blocker_xx_0 = filter.dc_blocker_cc(1024, True)
 
@@ -160,13 +168,13 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'NoisePow'), (self.fsk_logger_0, 'noisePow'))
-        self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'NoisePow'), (self.fsk_synchronization_0, 'NoisePow'))
+        self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'noisePow'), (self.fsk_synchronization_0, 'noisePow'))
         self.msg_connect((self.fsk_packet_parser_0, 'payloadMetaData'), (self.fsk_logger_0, 'payloadMetaData'))
+        self.msg_connect((self.fsk_synchronization_0, 'powerMetrics'), (self.fsk_logger_0, 'powerMetrics'))
         self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.connect((self.dc_blocker_xx_0, 0), (self.low_pass_filter_0, 0))
         self.connect((self.fsk_demodulation_0, 0), (self.fsk_packet_parser_0, 0))
-        self.connect((self.fsk_packet_parser_0, 0), (self.fsk_logger_0, 'payload'))
+        self.connect((self.fsk_packet_parser_0, 1), (self.fsk_logger_0, 0))
         self.connect((self.fsk_packet_parser_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.fsk_preamble_detect_0, 0), (self.fsk_synchronization_0, 0))
         self.connect((self.fsk_synchronization_0, 0), (self.fsk_demodulation_0, 0))
@@ -202,7 +210,7 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
 
     def set_data_rate(self, data_rate):
         self.data_rate = data_rate
-        self.set_fdev(self.data_rate/4)
+        self.set_fdev(self.data_rate/2)
         self.set_samp_rate(self.data_rate*8)
         self.low_pass_filter_0.set_taps(firdes.low_pass(1, self.samp_rate, 62.5e3, (self.data_rate*1), window.WIN_HAMMING, 6.76))
 
@@ -221,6 +229,14 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
         Qt.QMetaObject.invokeMethod(self._tx_power_line_edit, "setText", Qt.Q_ARG("QString", str(self.tx_power)))
         self.fsk_synchronization_0.set_tx_power(self.tx_power)
 
+    def get_save_measurements(self):
+        return self.save_measurements
+
+    def set_save_measurements(self, save_measurements):
+        self.save_measurements = save_measurements
+        self._save_measurements_callback(self.save_measurements)
+        self.fsk_logger_0.set_save_measurements(self.save_measurements)
+
     def get_samp_rate(self):
         return self.samp_rate
 
@@ -236,6 +252,22 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
     def set_rx_gain(self, rx_gain):
         self.rx_gain = rx_gain
         self.limesdr_source_0.set_gain(self.rx_gain,0)
+
+    def get_print_payload(self):
+        return self.print_payload
+
+    def set_print_payload(self, print_payload):
+        self.print_payload = print_payload
+        self._print_payload_callback(self.print_payload)
+        self.fsk_logger_0.set_print_payload(self.print_payload)
+
+    def get_print_metrics(self):
+        return self.print_metrics
+
+    def set_print_metrics(self, print_metrics):
+        self.print_metrics = print_metrics
+        self._print_metrics_callback(self.print_metrics)
+        self.fsk_logger_0.set_print_metrics(self.print_metrics)
 
     def get_packet_len(self):
         return self.packet_len
@@ -270,22 +302,6 @@ class eval_limesdr(gr.top_block, Qt.QWidget):
     def set_carrier_freq(self, carrier_freq):
         self.carrier_freq = carrier_freq
         self.limesdr_source_0.set_center_freq(self.carrier_freq, 0)
-
-    def get_Print_payload(self):
-        return self.Print_payload
-
-    def set_Print_payload(self, Print_payload):
-        self.Print_payload = Print_payload
-        self._Print_payload_callback(self.Print_payload)
-        self.fsk_packet_parser_0.set_log_payload(self.Print_payload)
-
-    def get_Print_metrics(self):
-        return self.Print_metrics
-
-    def set_Print_metrics(self, Print_metrics):
-        self.Print_metrics = Print_metrics
-        self._Print_metrics_callback(self.Print_metrics)
-        self.fsk_synchronization_0.set_enable_log(self.Print_metrics)
 
     def get_Enable_detection(self):
         return self.Enable_detection

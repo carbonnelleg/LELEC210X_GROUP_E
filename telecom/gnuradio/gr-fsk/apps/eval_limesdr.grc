@@ -117,7 +117,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: data_rate/4
+    value: data_rate/2
   states:
     bus_sink: false
     bus_source: false
@@ -209,7 +209,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1336, 556.0]
+    coordinate: [1312, 556.0]
     rotation: 0
     state: true
 - name: rx_gain
@@ -257,6 +257,23 @@ blocks:
     coordinate: [624, 12.0]
     rotation: 0
     state: enabled
+- name: save_measurements
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '0'
+    gui_hint: ''
+    label: ''
+    'true': '1'
+    type: int
+    value: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1448, 556.0]
+    rotation: 0
+    state: true
 - name: tx_power
   id: variable_qtgui_entry
   parameters:
@@ -320,6 +337,7 @@ blocks:
     payload_len: payload_len
     print_metrics: print_metrics
     print_payload: print_payload
+    save_measurements: save_measurements
   states:
     bus_sink: false
     bus_source: false
@@ -354,7 +372,6 @@ blocks:
     comment: ''
     crc_len: crc_len
     hdr_len: hdr_len
-    log_payload: print_payload
     maxoutbuf: '0'
     minoutbuf: '0'
     payload_len: payload_len
@@ -393,7 +410,6 @@ blocks:
     alias: ''
     comment: ''
     drate: data_rate
-    enable_log: print_metrics
     fdev: fdev
     fsamp: samp_rate
     hdr_len: hdr_len
@@ -523,13 +539,13 @@ connections:
 - [dc_blocker_xx_0, '0', low_pass_filter_0, '0']
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
-- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_logger_0, noisePow]
-- [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
-- [fsk_packet_parser_0, '0', fsk_logger_0, payload]
+- [fsk_onQuery_noise_estimation_0, noisePow, fsk_synchronization_0, noisePow]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
+- [fsk_packet_parser_0, '1', fsk_logger_0, '0']
 - [fsk_packet_parser_0, payloadMetaData, fsk_logger_0, payloadMetaData]
 - [fsk_preamble_detect_0, '0', fsk_synchronization_0, '0']
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
+- [fsk_synchronization_0, powerMetrics, fsk_logger_0, powerMetrics]
 - [fsk_synchronization_0, syncMetrics, fsk_logger_0, syncMetrics]
 - [limesdr_source_0, '0', dc_blocker_xx_0, '0']
 - [low_pass_filter_0, '0', fsk_onQuery_noise_estimation_0, '0']

@@ -5,6 +5,10 @@ category: "[FSK]"
 templates:
   imports: import fsk
   make: fsk.logger(${payload_len}, ${print_payload}, ${print_metrics}, ${meas_type}, ${save_measurements})
+  callbacks:
+  - set_print_payload(${print_payload})
+  - set_print_metrics(${print_metrics})
+  - set_save_measurements(${save_measurements})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:

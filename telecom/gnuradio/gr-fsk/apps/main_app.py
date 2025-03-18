@@ -166,8 +166,8 @@ class main_app(gr.top_block, Qt.QWidget):
 
 
         self.limesdr_fpga_source_0.set_dspcfg_preamble(((packet_len+1)*8*int(samp_rate/data_rate)+int(samp_rate/data_rate) ), K_threshold, Enable_detection)
-        self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, tx_power,print_metrics)
-        self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1], print_payload)
+        self.fsk_synchronization_0 = fsk.synchronization(data_rate, fdev, samp_rate, hdr_len, packet_len, tx_power)
+        self.fsk_packet_parser_0 = fsk.packet_parser(hdr_len, payload_len, crc_len, [0,0,1,1,1,1,1,0,0,0,1,0,1,0,1,0,0,1,0,1,0,1,0,0,1,0,1,1,0,1,1,1])
         self.fsk_onQuery_noise_estimation_0 = fsk.onQuery_noise_estimation(1024,10,noiseQuery)
         self.fsk_logger_0 = fsk.logger(payload_len, print_payload, print_metrics, 'main_app', save_measurements)
         self.fsk_flag_detector_0 = fsk.flag_detector(data_rate,  samp_rate, packet_len, Enable_detection)
@@ -180,13 +180,13 @@ class main_app(gr.top_block, Qt.QWidget):
         ##################################################
         self.msg_connect((self.fsk_onQuery_noise_estimation_0, 'noisePow'), (self.fsk_synchronization_0, 'noisePow'))
         self.msg_connect((self.fsk_packet_parser_0, 'payloadMetaData'), (self.fsk_logger_0, 'payloadMetaData'))
-        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.msg_connect((self.fsk_synchronization_0, 'powerMetrics'), (self.fsk_logger_0, 'powerMetrics'))
+        self.msg_connect((self.fsk_synchronization_0, 'syncMetrics'), (self.fsk_logger_0, 'syncMetrics'))
         self.connect((self.dc_blocker_xx_0, 0), (self.fsk_flag_detector_0, 0))
         self.connect((self.dc_blocker_xx_0, 0), (self.fsk_onQuery_noise_estimation_0, 0))
         self.connect((self.fsk_demodulation_0, 0), (self.fsk_packet_parser_0, 0))
         self.connect((self.fsk_flag_detector_0, 0), (self.fsk_synchronization_0, 0))
-        self.connect((self.fsk_packet_parser_0, 0), (self.fsk_logger_0, 0))
+        self.connect((self.fsk_packet_parser_0, 1), (self.fsk_logger_0, 0))
         self.connect((self.fsk_packet_parser_0, 0), (self.zeromq_pub_sink_0, 0))
         self.connect((self.fsk_synchronization_0, 0), (self.fsk_demodulation_0, 0))
         self.connect((self.limesdr_fpga_source_0, 0), (self.dc_blocker_xx_0, 0))
@@ -265,6 +265,7 @@ class main_app(gr.top_block, Qt.QWidget):
     def set_save_measurements(self, save_measurements):
         self.save_measurements = save_measurements
         self._save_measurements_callback(self.save_measurements)
+        self.fsk_logger_0.set_save_measurements(self.save_measurements)
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -288,7 +289,7 @@ class main_app(gr.top_block, Qt.QWidget):
     def set_print_payload(self, print_payload):
         self.print_payload = print_payload
         self._print_payload_callback(self.print_payload)
-        self.fsk_packet_parser_0.set_log_payload(self.print_payload)
+        self.fsk_logger_0.set_print_payload(self.print_payload)
 
     def get_print_metrics(self):
         return self.print_metrics
@@ -296,7 +297,7 @@ class main_app(gr.top_block, Qt.QWidget):
     def set_print_metrics(self, print_metrics):
         self.print_metrics = print_metrics
         self._print_metrics_callback(self.print_metrics)
-        self.fsk_synchronization_0.set_enable_log(self.print_metrics)
+        self.fsk_logger_0.set_print_metrics(self.print_metrics)
 
     def get_packet_len(self):
         return self.packet_len

@@ -433,7 +433,6 @@ blocks:
     comment: ''
     crc_len: crc_len
     hdr_len: hdr_len
-    log_payload: print_payload
     maxoutbuf: '0'
     minoutbuf: '0'
     payload_len: payload_len
@@ -451,7 +450,6 @@ blocks:
     alias: ''
     comment: ''
     drate: data_rate
-    enable_log: print_metrics
     fdev: fdev
     fsamp: samp_rate
     hdr_len: hdr_len
@@ -564,8 +562,8 @@ connections:
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
 - [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
 - [fsk_onQuery_noise_estimation_0, noisePow, fsk_synchronization_0, noisePow]
-- [fsk_packet_parser_0, '0', fsk_logger_0, '0']
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
+- [fsk_packet_parser_0, '1', fsk_logger_0, '0']
 - [fsk_packet_parser_0, payloadMetaData, fsk_logger_0, payloadMetaData]
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
 - [fsk_synchronization_0, powerMetrics, fsk_logger_0, powerMetrics]
