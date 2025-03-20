@@ -47,6 +47,11 @@ parameters:
 inputs:
   - domain: message
     optional: 1
+    id: noiseMetrics
+    label: noiseMetrics
+
+  - domain: message
+    optional: 1
     id: syncMetrics
     label: syncMetrics
   

@@ -156,7 +156,7 @@ class synchronization(gr.basic_block):
         return ninput_items_required
 
     def handle_msg(self, msg):
-        self.estimated_noise_power = pmt.to_double(msg)
+        self.estimated_noise_power = pmt.to_double(pmt.dict_ref(msg, pmt.intern("mean_noise_power"), pmt.PMT_NIL))
 
     def set_tx_power(self, tx_power):
         self.tx_power = tx_power

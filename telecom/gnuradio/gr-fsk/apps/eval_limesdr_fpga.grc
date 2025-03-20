@@ -414,7 +414,7 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    n_est: '10'
+    n_est: '100'
     n_samples: '1024'
     query: noiseQuery
   states:
@@ -561,6 +561,7 @@ connections:
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
 - [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
+- [fsk_onQuery_noise_estimation_0, noisePow, fsk_logger_0, noiseMetrics]
 - [fsk_onQuery_noise_estimation_0, noisePow, fsk_synchronization_0, noisePow]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
 - [fsk_packet_parser_0, '1', fsk_logger_0, '0']

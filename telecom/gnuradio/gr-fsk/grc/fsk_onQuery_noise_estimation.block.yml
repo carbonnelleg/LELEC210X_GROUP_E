@@ -4,7 +4,7 @@ category: "[FSK]"
 
 templates:
   imports: import fsk
-  make: fsk.onQuery_noise_estimation(${n_samples},${n_est},${query})
+  make: fsk.onQuery_noise_estimation(${n_samples}, ${n_est})
   callbacks:
   - query_estimation(${query})
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.

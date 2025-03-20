@@ -25,9 +25,6 @@ import numpy as np
 import pmt
 from gnuradio import gr
 
-from .utils import logging
-
-
 class onQuery_noise_estimation(gr.basic_block):
     """
     docstring for block onQuery_noise_estimation
@@ -36,26 +33,31 @@ class onQuery_noise_estimation(gr.basic_block):
     def query_estimation(self, query):
         if query == 1:
             self.est_counter = 1
-            self.mean_noise_est = 0
+            self.mean_noise_est = 0.0
             self.do_a_query = 1
 
-    def __init__(self, n_samples, n_est, query):
+    def __init__(self, n_samples, n_est):
+        # Make grc block
         self.n_samples = n_samples
         self.n_est = n_est
-        self.mean_noise_est = 0
-        self.est_counter = 1
-        self.noise_est = None
-        self.do_a_query = 0
-
         gr.basic_block.__init__(
             self, name="Noise Estimation", in_sig=[np.complex64], out_sig=None
         )
-        self.logger = logging.getLogger("noise")
-        self.message_port_register_out(pmt.intern("noisePow"))
 
-        self.gr_version = gr.version()
+        # Define noise estimation variables
+        self.mean_noise_est = 0.0
+        self.est_counter = 1
+        self.noise_est = 0.0
+        self.do_a_query = 0
+
+        # Define msg ports variables
+        self.message_port_register_out(pmt.intern("noisePow"))
+        self.est_vec = pmt.make_vector(n_est, pmt.from_double(0.0))
+        self.dc_offset_vec = pmt.make_vector(n_est, pmt.from_double(0.0))
+        self.n_samples_vec = pmt.make_vector(n_est, pmt.from_long(0))
 
         # Redefine function based on version
+        self.gr_version = gr.version()
         if LooseVersion(self.gr_version) < LooseVersion("3.9.0"):
             self.forecast = self.forecast_v38
         else:
@@ -69,9 +71,7 @@ class onQuery_noise_estimation(gr.basic_block):
         forecast is only called from a general block
         this is the default implementation
         """
-        ninput_items_required = [0] * ninputs
-        for i in range(ninputs):
-            ninput_items_required[i] = self.n_samples
+        ninput_items_required = [self.n_samples] * ninputs
 
         return ninput_items_required
 
@@ -80,24 +80,26 @@ class onQuery_noise_estimation(gr.basic_block):
             self.consume_each(len(input_items[0]))
         else:
             y = input_items[0]
-            dc_offset = np.mean(y)
+            dc_offset = np.abs(np.mean(y))
             self.noise_est = np.var(y)
+            pmt.vector_set(self.est_vec, self.est_counter-1, pmt.from_double(self.noise_est))
+            pmt.vector_set(self.dc_offset_vec, self.est_counter-1, pmt.from_double(dc_offset))
+            pmt.vector_set(self.n_samples_vec, self.est_counter-1, pmt.from_long(len(y)))
             self.consume_each(len(y))
             self.mean_noise_est += self.noise_est
-            self.logger.info(
-                f"estimated noise power: {self.noise_est:.2e} ({10 * np.log10(self.noise_est):.2f}dB, Noise std : {np.sqrt(self.noise_est):.2e},  DC offset: {np.abs(dc_offset):.2e}, calc. on {len(y)} samples)"
-            )
 
             if self.est_counter == self.n_est:
                 mean_noisP = self.mean_noise_est / self.est_counter
-                PMT_msg = pmt.from_double(mean_noisP)
-                self.message_port_pub(pmt.intern("noisePow"), PMT_msg)
+                msg = pmt.make_dict()
+                msg = pmt.dict_add(msg, pmt.intern("n_est"), pmt.from_long(self.n_est))
+                msg = pmt.dict_add(msg, pmt.intern("noise_est_vec"), self.est_vec)
+                msg = pmt.dict_add(msg, pmt.intern("mean_noise_power"), pmt.from_double(mean_noisP))
+                msg = pmt.dict_add(msg, pmt.intern("dc_offset_vec"), self.dc_offset_vec)
+                msg = pmt.dict_add(msg, pmt.intern("n_samples_vec"), self.n_samples_vec)
+                self.message_port_pub(pmt.intern("noisePow"), msg)
 
-                self.logger.info(
-                    f"===== > Final estimated noise power: {mean_noisP:.2e} ({10 * np.log10(mean_noisP):.2f}dB, Noise std : {np.sqrt(mean_noisP):.2e})"
-                )
                 self.est_counter = 1
-                self.mean_noise_est = 0
+                self.mean_noise_est = 0.0
                 self.do_a_query = 0
 
             else:
