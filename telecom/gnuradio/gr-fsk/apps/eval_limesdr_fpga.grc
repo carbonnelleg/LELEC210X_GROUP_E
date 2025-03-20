@@ -366,7 +366,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [768, 356.0]
+    coordinate: [920, 388.0]
     rotation: 0
     state: enabled
 - name: fsk_flag_detector_0
@@ -440,12 +440,13 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1008, 396.0]
+    coordinate: [1176, 440.0]
     rotation: 0
     state: enabled
 - name: fsk_synchronization_0
   id: fsk_synchronization
   parameters:
+    N_Moose: '2'
     affinity: ''
     alias: ''
     comment: ''
@@ -455,13 +456,14 @@ blocks:
     hdr_len: hdr_len
     maxoutbuf: '0'
     minoutbuf: '0'
+    old_sync: 'False'
     packet_len: packet_len
     tx_power: tx_power
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [464, 388.0]
+    coordinate: [464, 372.0]
     rotation: 0
     state: enabled
 - name: limesdr_fpga_source_0
@@ -551,7 +553,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1392, 452.0]
+    coordinate: [1560, 460.0]
     rotation: 0
     state: enabled
 

@@ -38,7 +38,7 @@ def get_measurements_logger(measurement_type: str ='main_app') -> logging.Logger
     return logger
 
 
-def timeit(fun_or_prefix: Union[Callable[..., Any], str] = '') -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def timeit(fun_or_prefix: Union[Callable[..., Any], str] = "") -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorator that registers timing statistics for a function.
 
@@ -53,7 +53,7 @@ def timeit(fun_or_prefix: Union[Callable[..., Any], str] = '') -> Callable[[Call
         Say you have a function definition:
 
         >>> def my_function(a, b):
-        ...     pass
+        ...     ...
 
         You can simply use this utility as follows:
 
@@ -61,17 +61,17 @@ def timeit(fun_or_prefix: Union[Callable[..., Any], str] = '') -> Callable[[Call
         >>>
         >>> @timeit
         ... def my_function(a, b):
-        ...     pass
+        ...     ...
         >>>
         >>> @timeit()
         ... def my_second_function(a, b):
-        ...     pass
+        ...     ...
 
         You can also specify a prefix:
 
         >>> @timeit(prefix="Test: ")
         ... def my_third_function(a, b):
-        ...     pass
+        ...     ...
 
     Note that you can use this decorator as many times as you want.
     """

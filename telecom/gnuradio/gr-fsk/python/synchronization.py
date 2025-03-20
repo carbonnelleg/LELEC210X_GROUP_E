@@ -27,8 +27,9 @@ from scipy.signal import savgol_filter
 
 from .utils import timeit
 
+
 @timeit
-def cfo_estimation(y, B, R, Fdev):
+def old_cfo_estimation(y, B, R, Fdev, N_Moose=2):
     """
     Estimates the CFO based on the received signal.
     Estimates CFO using Moose algorithm, on first samples of preamble.
@@ -37,12 +38,39 @@ def cfo_estimation(y, B, R, Fdev):
     :param B: Bitrate [bits/sec]
     :param R: oversample factor (typically = 8)
     :param Fdev: Frequency deviation [Hz] ( = Bitrate/4)
+    :param N_Moose: N parameter in Moose algorithm (max should be total bits per preamble / 2)
+        default to 2 (low accuracy and low chance of ambiguity)
     :return: The estimated CFO.
     """
     # extract 2 blocks of size N*R at the start of y
 
     # apply the Moose algorithm on these two blocks to estimate the CFO
-    N_Moose_list = [2, 4, 8, 16] # max should be total bits per preamble / 2
+    N_t = N_Moose * R
+    T = 1 / B # 1/Bitrate
+    
+    alpha_est = np.vdot(y[:N_t], y[N_t:2*N_t])
+    
+    cfo_est = np.angle(alpha_est) * R / (2 * np.pi * N_t * T)
+
+    return cfo_est
+
+
+@timeit
+def cfo_estimation(y, B, R, Fdev, N_Moose=2):
+    """
+    Estimates the CFO based on the received signal.
+    Estimates CFO using Moose algorithm, on first samples of preamble.
+
+    :param y: The received signal, (N * R,).
+    :param B: Bitrate [bits/sec]
+    :param R: oversample factor (typically = 8)
+    :param Fdev: Frequency deviation [Hz] ( = Bitrate/4)
+    :param N_Moose: N parameter in Moose algorithm (not used in this function)
+    :return: The estimated CFO.
+    """
+    # extract 2 blocks of size N*R at the start of y
+
+    # apply the Moose algorithm on these two blocks to estimate the CFO
     N_Moose_list = [2, 4, 8, 16] # max should be total bits per preamble / 2
     T = 1 / B # 1/Bitrate
 
@@ -61,6 +89,29 @@ def cfo_estimation(y, B, R, Fdev):
         cfo_est = new_cfo_est
     
     return cfo_est + cfo_est_off
+
+
+@timeit
+def old_sto_estimation(y, B, R, Fdev):
+    """
+    Estimate symbol timing (fractional) based on phase shifts
+    """
+    phase_function = np.unwrap(np.angle(y))
+    phase_derivative_sign = phase_function[1:] - phase_function[:-1]
+    sign_derivative = np.abs(phase_derivative_sign[1:] - phase_derivative_sign[:-1])
+
+    sum_der_saved = -np.inf
+    save_i = 0
+
+    for i in range(0, R):
+        sum_der = np.sum(sign_derivative[i::R])
+
+        if sum_der > sum_der_saved:
+            sum_der_saved = sum_der
+            save_i = i
+
+    return np.mod(save_i + 1, R)
+
 
 @timeit
 def sto_estimation(y, B, R, Fdev):
@@ -88,7 +139,7 @@ class synchronization(gr.basic_block):
     docstring for block synchronization
     """
 
-    def __init__(self, drate, fdev, fsamp, hdr_len, packet_len, tx_power):
+    def __init__(self, drate, fdev, fsamp, hdr_len, packet_len, tx_power, N_Moose, old_sync):
         self.drate = drate
         self.fdev = fdev
         self.fsamp = fsamp
@@ -97,6 +148,15 @@ class synchronization(gr.basic_block):
         self.packet_len = packet_len  # in bytes
         self.estimated_noise_power = 1e-5
         self.tx_power = tx_power
+        self.N_Moose = N_Moose
+        self.old_sync = bool(old_sync)
+
+        if old_sync:
+            self.cfo_estimation = old_cfo_estimation
+            self.sto_estimation = old_sto_estimation
+        else:
+            self.cfo_estimation = cfo_estimation
+            self.sto_estimation = sto_estimation
 
         # Remaining number of samples in the current packet
         self.rem_samples = 0
@@ -165,14 +225,14 @@ class synchronization(gr.basic_block):
     def general_work(self, input_items, output_items):
         if self.rem_samples == 0:  # new packet to process, compute the CFO and STO
             y = input_items[0][: self.hdr_len * 8 * self.osr]
-            self.cfo = cfo_estimation(y, self.drate, self.osr, self.fdev)
+            self.cfo = self.cfo_estimation(y, self.drate, self.osr, self.fdev, self.N_Moose)
 
             # Correct CFO in preamble
             t = np.arange(len(y)) / (self.drate * self.osr)
             y_cfo = np.exp(-1j * 2 * np.pi * self.cfo * t) * y
             self.t0 = t[-1]
 
-            self.sto = sto_estimation(y_cfo, self.drate, self.osr, self.fdev)
+            self.sto = self.sto_estimation(y_cfo, self.drate, self.osr, self.fdev)
 
             self.power_est = None
             self.rem_samples = (self.packet_len + 1) * 8 * self.osr

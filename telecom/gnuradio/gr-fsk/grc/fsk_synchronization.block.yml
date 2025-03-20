@@ -4,7 +4,7 @@ category: "[FSK]"
 
 templates:
   imports: import fsk
-  make: fsk.synchronization(${drate}, ${fdev}, ${fsamp}, ${hdr_len}, ${packet_len}, ${tx_power})
+  make: fsk.synchronization(${drate}, ${fdev}, ${fsamp}, ${hdr_len}, ${packet_len}, ${tx_power}, ${N_Moose}, ${old_sync})
   callbacks:
   - set_tx_power(${tx_power})
   
@@ -32,6 +32,14 @@ parameters:
   - id: tx_power
     label: TX power used
     dtype: float
+  - id: old_sync
+    label: Use old synchronization algorithms
+    dtype: int
+    default: False
+  - id: N_Moose
+    label: N parameter in Moose algorithm
+    dtype: int
+    default: 2
 
 #  - id: estimated_noise_power
 #    label: Estimated Noise Power
