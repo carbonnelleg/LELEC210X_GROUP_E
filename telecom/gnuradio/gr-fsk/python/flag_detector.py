@@ -24,7 +24,7 @@ from distutils.version import LooseVersion
 import numpy as np
 from gnuradio import gr
 
-from .utils import logging
+from .utils import logging, timeit
 
 
 class flag_detector(gr.basic_block):
@@ -85,6 +85,7 @@ class flag_detector(gr.basic_block):
     def set_enable(self, enable):
         self.enable = enable
 
+    @timeit('flag_detector/')
     def general_work(self, input_items, output_items):
         if self.rem_samples > 0:  # We are processing a previously detected packet
             N = len(output_items[0])  # available space at output

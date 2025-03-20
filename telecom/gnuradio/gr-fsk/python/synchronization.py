@@ -161,6 +161,7 @@ class synchronization(gr.basic_block):
     def set_tx_power(self, tx_power):
         self.tx_power = tx_power
 
+    @timeit('synchronization/')
     def general_work(self, input_items, output_items):
         if self.rem_samples == 0:  # new packet to process, compute the CFO and STO
             y = input_items[0][: self.hdr_len * 8 * self.osr]

@@ -23,6 +23,7 @@ from distutils.version import LooseVersion
 import numpy as np
 from gnuradio import gr
 
+from .utils import timeit
 
 def demodulate(y, B, R, Fdev):
     """
@@ -117,6 +118,7 @@ class demodulation(gr.basic_block):
 
         return out
 
+    @timeit('demodulation/')
     def general_work(self, input_items, output_items):
         n_syms = len(output_items[0]) * 8
         buf_len = n_syms * self.osr

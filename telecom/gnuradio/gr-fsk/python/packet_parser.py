@@ -24,6 +24,7 @@ import numpy as np
 from gnuradio import gr
 import pmt
 
+from .utils import timeit
 
 def reflect_data(x, width):
     # See: https://stackoverflow.com/a/20918545
@@ -123,7 +124,8 @@ class packet_parser(gr.basic_block):
             ninput_items_required[i] = self.packet_len + 1  # in bytes
 
         return ninput_items_required
-
+    
+    @timeit('packet_parser/')
     def general_work(self, input_items, output_items):
         # we process maximum one packet at a time
         input_bytes = input_items[0][: self.packet_len + 1]

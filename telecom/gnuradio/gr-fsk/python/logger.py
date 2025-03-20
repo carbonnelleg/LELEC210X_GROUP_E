@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 18 09:29:36 2025
+
+@author: carbonnelleg
+"""
+
 from distutils.version import LooseVersion
 
 from collections import deque
@@ -6,7 +13,7 @@ import numpy as np
 import pmt
 import logging
 
-from .utils import get_measurements_logger
+from .utils import get_measurements_logger, timeit
 
 class logger(gr.basic_block):
     """
@@ -88,7 +95,6 @@ class logger(gr.basic_block):
     
     
     def set_print_payload(self, print_payload):
-        print("changed print payload")
         self.print_payload = print_payload
     
     def set_print_metrics(self, print_metrics):
@@ -111,6 +117,7 @@ class logger(gr.basic_block):
 
         return ninput_items_required
     
+    @timeit('logger/')
     def general_work(self, input_items, output_items):
         payload = input_items[0][0]
         self.consume_each(1)

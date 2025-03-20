@@ -3,7 +3,7 @@ import logging
 import statistics as stats
 from functools import wraps
 from time import time
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Union
 import os
 from datetime import datetime
 
@@ -38,8 +38,11 @@ def get_measurements_logger(measurement_type: str ='main_app') -> logging.Logger
     return logger
 
 
-def timeit(fun: Callable[..., Any]) -> Callable[..., Any]:
+def timeit(fun_or_prefix: Union[Callable[..., Any], str] = '') -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
+    Decorator that registers timing statistics for a function.
+
+    When the program exits, it prints timing stats.
     Wrapper around a function and registers timing statistics about it.
 
     When the program exits (e.g., with CTRL + C), this utility
@@ -59,18 +62,38 @@ def timeit(fun: Callable[..., Any]) -> Callable[..., Any]:
         >>> @timeit
         ... def my_function(a, b):
         ...     pass
+        >>>
+        >>> @timeit()
+        ... def my_second_function(a, b):
+        ...     pass
+
+        You can also specify a prefix:
+
+        >>> @timeit(prefix="Test: ")
+        ... def my_third_function(a, b):
+        ...     pass
 
     Note that you can use this decorator as many times as you want.
     """
+
+    if callable(fun_or_prefix):
+        return _timeit_decorator(fun_or_prefix, "")
+    else:
+        def decorator(fun: Callable[..., Any]) -> Callable[..., Any]:
+            return _timeit_decorator(fun, fun_or_prefix)
+        return decorator
+
+def _timeit_decorator(fun: Callable[..., Any], prefix: str) -> Callable[..., Any]:
     f_name = getattr(fun, "__name__", "<unnamed function>")
     data: List[float] = []
 
     def print_stats() -> None:
-        mean = stats.mean(data)
-        std = stats.stdev(data)
-        print(
-            f"{f_name} statistics: mean execution time of {mean:.2}s. (std: {std:.2}s.)"
-        )
+        if data:
+            mean = stats.mean(data)
+            std = stats.stdev(data) if len(data) > 1 else 0.0
+            print(
+                f"{prefix + f_name} statistics: mean execution time of {mean:.4f}s (std: {std:.4f}s)"
+            )
 
     @wraps(fun)
     def wrapper(*args, **kwargs):

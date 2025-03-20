@@ -24,6 +24,8 @@ from distutils.version import LooseVersion
 import numpy as np
 from gnuradio import gr
 
+from .utils import timeit
+
 
 def preamble_detect_energy(y, L, threshold):
     """
@@ -97,7 +99,8 @@ class preamble_detect(gr.basic_block):
 
     def set_threshold(self, threshold):
         self.threshold = threshold
-
+    
+    @timeit('preamble_detect/')
     def general_work(self, input_items, output_items):
         if self.rem_samples > 0:  # We are processing a previously detected packet
             N = len(output_items[0])  # available space at output
