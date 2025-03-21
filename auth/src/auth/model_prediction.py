@@ -37,13 +37,14 @@ def old_model_prediction(payload):
     if ocsvm_prediction[0] == 1:
         return None
     
+    new_shape = (20, 20, 1)
+    demo_fv = this_fv.reshape(new_shape)
+    
     # Prédiction avec le CNN
-    mat = np.zeros((2, len(this_fv)))
-    mat[0] = this_fv
-    prediction = cnn_model.predict(mat)
+    prediction = cnn_model.predict(demo_fv)
     
     # Obtenir la classe avec la probabilité la plus élevée
-    predicted_class = classnames[np.argmax(prediction[0])]
+    predicted_class = classnames[np.argmax(prediction)]
     
     return predicted_class
 
