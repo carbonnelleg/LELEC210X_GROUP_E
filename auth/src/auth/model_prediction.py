@@ -13,19 +13,40 @@ def decision_maxlikelihood(probs):
     return classnames[np.argmax(prod_probs)]
 
 
+import numpy as np
+import pickle
+from tensorflow.keras.models import load_model
+
 def old_model_prediction(payload):
+    classnames = ['chainsaw', 'fire', 'fireworks', 'gun']
     this_fv = np.frombuffer(payload, dtype=np.uint16)
-    # fm_dir = "data/feature_matrices/"  # where to save the features matrices
-    filename = "auth/src/auth/model.pickle"
-    model = pickle.load(open(filename, "rb"))
-    mat = np.zeros((2, len(this_fv)))
+    
+    ocsvm_filename = "auth/src/auth/ocsvm_model.pkl"
+    cnn_filename = "auth/src/auth/CNN_model.keras"
+    
+    # Charger les modèles
+    ocsvm_model = pickle.load(open(ocsvm_filename, "rb"))
+    cnn_model = load_model(cnn_filename)
+    
+    # Normalisation du vecteur de caractéristiques
     my_little_norm = np.linalg.norm(this_fv)
-    if my_little_norm < 40:
+    this_fv = this_fv / my_little_norm
+    
+    # Prédiction avec OCSVM
+    ocsvm_prediction = ocsvm_model.predict([this_fv])
+    if ocsvm_prediction[0] == 1:
         return None
-    this_fv = this_fv / np.linalg.norm(this_fv)
+    
+    # Prédiction avec le CNN
+    mat = np.zeros((2, len(this_fv)))
     mat[0] = this_fv
-    prediction = model.predict(mat)
-    return prediction[0]
+    prediction = cnn_model.predict(mat)
+    
+    # Obtenir la classe avec la probabilité la plus élevée
+    predicted_class = classnames[np.argmax(prediction[0])]
+    
+    return predicted_class
+
 
 old_predictions = []
 model = tf.keras.models.load_model("auth/src/auth/CNN_model.keras")
