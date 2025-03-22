@@ -95,16 +95,18 @@ class logger(gr.basic_block):
                 f"estimated noise power: {noise_est:.2e} ({noise_est_dB:.2f}dB, Noise std : {np.sqrt(noise_est):.2e}, "
                 f"DC offset: {dc_offset:.2e}, calc. on {n_samples} samples)"
             )
-            self.measurements_logger.info(
-                f"noise_est={noise_est}, dc_offset={dc_offset}, n_samples={n_samples}"
-            )
+            if self.save_measurements:
+                self.measurements_logger.info(
+                    f"noise_est={noise_est}, dc_offset={dc_offset}, n_samples={n_samples}"
+                )
         logger.info(
             f"===== > Final estimated noise power: {self.mean_noise_power:.2e} ({10 * np.log10(self.mean_noise_power):.2f}dB, "
             f"Noise std : {np.sqrt(self.mean_noise_power):.2e})"
         )
-        self.measurements_logger.info(
-            f"mean_noise_power={self.mean_noise_power}"
-        )
+        if self.save_measurements:
+            self.measurements_logger.info(
+                f"mean_noise_power={self.mean_noise_power}"
+            )
 
     def parse_sync_metrics(self, msg):
         preamble_start = pmt.to_long(pmt.dict_ref(msg, pmt.intern("preamble_start"), pmt.PMT_NIL))
