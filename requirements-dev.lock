@@ -321,6 +321,7 @@ numpy==2.0.2
     # via ml-dtypes
     # via numba
     # via pandas
+    # via pyqtgraph
     # via scikit-learn
     # via scipy
     # via seaborn
@@ -403,6 +404,7 @@ pyqt6-qt6==6.8.2
     # via pyqt6
 pyqt6-sip==13.10.0
     # via pyqt6
+pyqtgraph==0.13.7
 pyserial==3.5
     # via auth
 pytest==8.3.2
@@ -599,7 +601,7 @@ wsproto==1.2.0
 wtforms==3.1.2
     # via flask-wtf
 xgboost==2.1.4
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@673277e510ebd996b62a2fcc76169bf3cce29910
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@da7223d4aa42ff9fc680b0951d043dd03cec2d30
 zipp==3.20.1
     # via importlib-metadata
     # via importlib-resources

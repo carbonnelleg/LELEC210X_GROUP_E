@@ -62,5 +62,5 @@ def model_prediction(payload):
     if len(old_predictions) == 4:
         old_predictions.pop(0)
         old_predictions.append(prediction[0])
-    return decision_maxlikelihood(old_predictions)
+    return decision_maxlikelihood(old_predictions), this_fv, prediction[0]
         

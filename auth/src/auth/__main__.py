@@ -15,6 +15,8 @@ from common.env import load_dotenv
 from common.logging import logger
 from leaderboard.submit import submit
 
+import auth.custom_gui as cg
+
 from . import PRINT_PREFIX, packet
 
 load_dotenv()
@@ -43,6 +45,13 @@ def hex_to_bytes(ctx: click.Context, param: click.Parameter, value: str) -> byte
 
 
 @click.command()
+@click.option(
+    "-gui",
+    "--gui",
+    default=False,
+    is_flag=True,
+    help="Enable the custom GUI.",
+)
 @click.option(
     "-i",
     "--input",
@@ -93,6 +102,7 @@ def hex_to_bytes(ctx: click.Context, param: click.Parameter, value: str) -> byte
 @common.click.n_melvecs
 @common.click.verbosity
 def main(
+    gui: bool,
     _input: Optional[click.File],
     output: click.File,
     serial_port: Optional[str],
@@ -165,6 +175,12 @@ def main(
                 msg = socket.recv(2 * melvec_length * n_melvecs)
                 yield msg
 
+    if gui:
+        gui_object, app = cg.generate_gui_thread()
+    else:
+        gui_object = None
+        app = None
+
     input_stream = reader()
     for msg in input_stream:
         try:
@@ -173,13 +189,22 @@ def main(
             # myType = type(payload)
             # output.write(f'my type is {myType}\n')
             # myClass = int.from_bytes(payload, 'big')%5
-            myClass = mp.model_prediction(payload)
+            myClass, this_fv, prediction = mp.model_prediction(payload)
             if REMOTE:
                 hostname = remote_hostname
                 key = remote_key
             else:
                 hostname = local_hostname
                 key = local_key
+
+            if gui and app is not None and gui_object is not None:
+                gui_object.update_gui_params(  # Update the GUI
+                    current_choice=myClass,
+                    current_packet_data=payload,
+                    current_feature_vector=this_fv,
+                    current_class_names=mp.classnames,
+                    current_class_probas=prediction,
+                )
             
             #Checking the threshold
             if myClass is None:
@@ -189,6 +214,9 @@ def main(
                 output.write(f'my class is {myClass}\n')
             # output.write(PRINT_PREFIX + payload.hex() + "\n")
             output.flush()
+            
+            if gui and app is not None and gui_object is not None:
+                app.processEvents() # Update the GUI
 
         except packet.InvalidPacket as e:
             logger.error(
