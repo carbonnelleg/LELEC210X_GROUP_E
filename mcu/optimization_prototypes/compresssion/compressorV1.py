@@ -85,34 +85,24 @@ class Canvas(QWidget):
                 painter.drawEllipse(cx - self.scale, cy - peak_radius, 2 * self.scale, 2 * peak_radius)
         # Overlay first derivative (4×4 squares in Jet colors)
         if self.show_first_deriv:
-            factor_d = 0.5
-            square_size = 4
-            half_sq = square_size // 2
-            for x in range(self.canvas_width):
-                for y in range(1, self.canvas_height - 1):
-                    d = (int(self.grid[y+1, x]) - int(self.grid[y-1, x])) / 2.0
-                    cell_cx = int(x * self.scale + self.scale / 2)
-                    cell_cy = int(y * self.scale + self.scale / 2)
-                    offset = d * factor_d
-                    norm = (d + 128) / 256.0
-                    color = getJetColor(norm)
-                    rect = QRect(cell_cx - half_sq, int(round(cell_cy - half_sq - offset)), square_size, square_size)
-                    painter.fillRect(rect, color)
-        # Overlay second derivative (4×4 squares in Jet colors)
+            gradient = np.gradient(self.grid, axis=0)
+            for y in range(self.canvas_height):
+                for x in range(self.canvas_width):
+                    val = gradient[y, x]
+                    if val != 0:
+                        color = getJetColor(val / 255.0)
+                        painter.fillRect(x * self.scale, y * self.scale, self.scale, self.scale, color)
+
+        # Overlay second derivative (4×4 squares in Viridis colors)
         if self.show_second_deriv:
-            factor_d2 = 0.2
-            square_size = 4
-            half_sq = square_size // 2
-            for x in range(self.canvas_width):
-                for y in range(1, self.canvas_height - 1):
-                    d2 = (int(self.grid[y+1, x]) - 2 * int(self.grid[y, x]) + int(self.grid[y-1, x]))
-                    cell_cx = int(x * self.scale + self.scale / 2)
-                    cell_cy = int(y * self.scale + self.scale / 2)
-                    offset = d2 * factor_d2
-                    norm = (d2 + 128) / 256.0
-                    color = getJetColor(norm)
-                    rect = QRect(cell_cx - half_sq, int(round(cell_cy - half_sq - offset)), square_size, square_size)
-                    painter.fillRect(rect, color)
+            gradient = np.gradient(self.grid, axis=0)
+            second_gradient = np.gradient(gradient, axis=0)
+            for y in range(self.canvas_height):
+                for x in range(self.canvas_width):
+                    val = second_gradient[y, x]
+                    if val != 0:
+                        color = getViridisColor(val / 255.0)
+                        painter.fillRect(x * self.scale, y * self.scale, self.scale, self.scale, color)
 
     def compute_peaks(self):
         peaks = []
@@ -239,10 +229,13 @@ class MainWindow(QMainWindow):
         deriv_lines = ["Column | Max 1st Deriv | Row of Max"]
         nonzero_cols = 0
         for x in range(self.canvas.canvas_width):
+            # Compute column derivative.
+            column = self.canvas.grid[:, x]
+            deriv = np.gradient(column)
             max_d = 0
             row_max = None
             for y in range(1, self.canvas.canvas_height - 1):
-                d = (int(self.canvas.grid[y+1, x]) - int(self.canvas.grid[y-1, x])) / 2.0
+                d = deriv[y]
                 if abs(d) > abs(max_d):
                     max_d = d
                     row_max = y
@@ -257,14 +250,23 @@ class MainWindow(QMainWindow):
         # Calculate compression efficiency.
         # Full grid: one byte per cell.
         full_bytes = self.canvas.canvas_width * self.canvas.canvas_height
-        # Peaks encoding: 3 bytes per peak (only for columns that have peaks).
+        # Peaks encoding: 3 bytes per peak.
         peaks_bytes = len(self.canvas.peaks) * 3
-        # 1st derivative encoding: 2 bytes per column with a nonzero deriv.
-        first_deriv_bytes = nonzero_cols * 2
+        
+        # 1st derivative encoding: count each derivative change that is within a threshold.
+        deriv_threshold = 20  # Only encode changes if abs(d) is less or equal than this threshold.
+        encoded_deriv_changes = 0
+        for x in range(self.canvas.canvas_width):
+            for y in range(1, self.canvas.canvas_height - 1):
+                d = (int(self.canvas.grid[y+1, x]) - int(self.canvas.grid[y-1, x])) / 2.0
+                if abs(d) <= deriv_threshold:
+                    encoded_deriv_changes += 1
+        first_deriv_bytes = encoded_deriv_changes * 2  # 2 bytes per change.
+        
         comp_lines = [
             f"Full Grid Data: {full_bytes} bytes",
             f"Peaks Encoding: {peaks_bytes} bytes (actual count)",
-            f"1st Deriv Encoding: {first_deriv_bytes} bytes (actual count)",
+            f"1st Deriv Encoding: {first_deriv_bytes} bytes (for {encoded_deriv_changes} changes)",
             f"Peaks Ratio: {100 * peaks_bytes / full_bytes:.1f}%",
             f"1st Deriv Ratio: {100 * first_deriv_bytes / full_bytes:.1f}%"
         ]
