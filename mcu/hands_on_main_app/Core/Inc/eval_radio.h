@@ -6,11 +6,11 @@
 #define INC_EVAL_RADIO_H_
 
 // Radio evaluation parameters
-#define MIN_PA_LEVEL -10 // initial Tx transmit power, in dBm
+#define MIN_PA_LEVEL -25 // initial Tx transmit power, in dBm
 #define MAX_PA_LEVEL 0 // final Tx transmit power, in dBm
 #define N_PACKETS 200 // number of packets transmitted for each Tx power level
 #define PAYLOAD_LEN 800 // payload length of the transmitted packets
-#define PACKET_DELAY 100 // :uint16: delay between two packets, equal to PACKET_DELAY * 10 milliseconds
+#define PACKET_DELAY 40 // :uint16: delay between two packets, equal to PACKET_DELAY * 10 milliseconds
 
 void eval_radio(void);
 

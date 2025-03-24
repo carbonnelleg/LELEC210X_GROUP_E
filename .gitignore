@@ -65,11 +65,11 @@ mcu/*.launch
 
 # Telecom
 
-telecom/gr-limesdr-3-8/build/
-telecom/gr-limesdr-3-10-3-8/build/
-telecom/gr-limesdr-3-10/build/
-telecom/hands_on_measurements/gr-fsk/build/
-telecom/hands_on_measurements/gr-fsk/apps/*.py
+telecom/gnuradio/gr-limesdr-3-8/build/
+telecom/gnuradio/gr-limesdr-3-10-3-8/build/
+telecom/gnradio/gr-limesdr-3-10/build/
+telecom/gnuradio/gr-fsk/build/
+telecom/gnuradio/gr-fsk/apps/*.py
 # FPGA
 
 # Bitstreams

@@ -18,7 +18,7 @@ void eval_radio(void)
 		buf[i] = (uint8_t) (i & 0xFF);
 	}
 
-	for (int32_t lvl = MIN_PA_LEVEL; lvl <= MAX_PA_LEVEL; lvl = lvl+1) {
+	for (int32_t lvl = MAX_PA_LEVEL; lvl >= MIN_PA_LEVEL; lvl = lvl-1) {
 		btn_press = 0;
 		DEBUG_PRINT("=== Press button B1 to start evaluation at %ld dBm\r\n", lvl);
 		while (!btn_press) {

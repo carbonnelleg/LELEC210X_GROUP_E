@@ -7,6 +7,7 @@ import argparse
 import os
 import numpy as np
 from telecom.hands_on_simulation.chain import Chain, BasicChain, OptimizedChain
+import pandas as pd
 
 simdata_path = os.path.dirname(__file__)+'/data/'
 
@@ -77,6 +78,40 @@ def register_simulation(params, chain_class, sim_id=None, status='pending', simd
     return sim_id
 
 
+def load_simulation(sim_id: int) -> pd.DataFrame:
+    """
+    Loads simulation data from a CSV file corresponding to the given simulation ID.
+
+    Parameters
+    ----------
+    sim_id : int
+        The simulation ID used to identify the corresponding data file.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the loaded simulation data, excluding the last 1000 columns.
+    
+    Raises
+    ------
+    FileNotFoundError
+        If the specified simulation file does not exist.
+    ValueError
+        If the file cannot be parsed correctly.
+    """
+    filename = __file__ + f"/../data/simulation_{sim_id:04d}.csv"
+    
+    try:
+        columns = pd.read_csv(filename, index_col=0, nrows=0).columns
+        df = pd.read_csv(filename, usecols=np.arange(8), names=columns[:8], skiprows=1)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Simulation file simulation_{sim_id:04d}.csv not found.")
+    except Exception as e:
+        raise ValueError(f"Failed to load simulation_{sim_id:04d}.csv: {e}")
+
+    return df
+
+
 def refactor(simdata_path=simdata_path+'simdata.json'):
 
     with open(simdata_path, 'r') as f:
@@ -106,7 +141,7 @@ def parse_args(arg_list: list[str] = None):
     sim_group.add_argument("-f", "--force_simulation", action="store_true",
                             help="if set, force simulation and replace any existing datafile corresponding to simulation parameters")
     sim_group.add_argument("-s", "--sim_id", type=int, default=0,
-			                help="if set, uses the simulation 'simulation_{SIM_ID}' - default to 0 (not an existing simulation)")
+			                help=r"if set, uses the simulation 'simulation_{SIM_ID}' - default to 0 (not an existing simulation)")
     sim_group.add_argument("--no_show", "--dont_show_graphs",
                             action="store_true", help="if set, don't show matplotlib graphs")
     sim_group.add_argument("--no_save", "--dont_save_graphs",
