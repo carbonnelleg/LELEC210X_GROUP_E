@@ -15,8 +15,6 @@ from common.env import load_dotenv
 from common.logging import logger
 from leaderboard.submit import submit
 
-import auth.custom_gui as cg
-
 from . import PRINT_PREFIX, packet
 
 load_dotenv()
@@ -175,12 +173,6 @@ def main(
                 msg = socket.recv(2 * melvec_length * n_melvecs)
                 yield msg
 
-    if gui:
-        gui_object, app = cg.generate_gui_thread()
-    else:
-        gui_object = None
-        app = None
-
     input_stream = reader()
     for msg in input_stream:
         try:
@@ -197,14 +189,16 @@ def main(
                 hostname = local_hostname
                 key = local_key
 
-            if gui and app is not None and gui_object is not None:
-                gui_object.update_gui_params(  # Update the GUI
-                    current_choice=myClass,
-                    current_packet_data=payload,
-                    current_feature_vector=this_fv,
-                    current_class_names=mp.classnames,
-                    current_class_probas=prediction,
-                )
+            if gui:
+                data = {
+                    "current_class_names": ["chainsaw", "fire", "fireworks", "gun"],
+                    "current_class_probas": prediction,
+                    "current_feature_vector": this_fv,
+                    "current_packet_data": payload.hex(),
+                    "current_choice": myClass,
+                }
+                response = requests.post(hostname, json=data)
+                logger.debug(f"Response status code: {response.status_code}")
             
             #Checking the threshold
             if myClass is None:
@@ -215,9 +209,6 @@ def main(
             # output.write(PRINT_PREFIX + payload.hex() + "\n")
             output.flush()
             
-            if gui and app is not None and gui_object is not None:
-                app.processEvents() # Update the GUI
-
         except packet.InvalidPacket as e:
             logger.error(
                 f"Invalid packet error: {e.args[0]}",
