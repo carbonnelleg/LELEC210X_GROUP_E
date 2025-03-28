@@ -17,6 +17,8 @@ from leaderboard.submit import submit
 
 from . import PRINT_PREFIX, packet
 
+from custom_gui2 import get_gui_status, launch_gui_process
+
 load_dotenv()
 
 local_hostname = "http://localhost:5000"
@@ -172,6 +174,10 @@ def main(
             while True:
                 msg = socket.recv(2 * melvec_length * n_melvecs)
                 yield msg
+
+    if gui:
+        gui_process = launch_gui_process()
+        logger.info("GUI process launched.")
 
     input_stream = reader()
     for msg in input_stream:

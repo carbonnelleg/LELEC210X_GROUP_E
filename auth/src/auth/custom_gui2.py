@@ -12,6 +12,8 @@ from PyQt6.QtCore import QMutex, QMutexLocker
 import pyqtgraph as pg
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
+import requests
+import os
 
 DEBUG_MODE_GUI = False
 TARGET_FPS = 20
@@ -220,6 +222,19 @@ def generate_gui_thread() -> tuple[CustomGUI, QApplication]:
     window = CustomGUI()
     return window, app
 
+def get_gui_status():
+    # Sends a ping to the GUI to check if it is still running
+    try:
+        response = requests.get("http://localhost:8000")
+        return response.status_code == 200
+    except requests.exceptions.ConnectionError:
+        return False
+    
+def launch_gui_process():
+    # Launch the GUI in a separate process
+    import subprocess
+    root = os.path.dirname(os.path.abspath(__file__))
+    subprocess.Popen(["python", root+"/custom_gui2.py"], cwd=root)
 
 if __name__ == '__main__':
     window, app = generate_gui_thread()
