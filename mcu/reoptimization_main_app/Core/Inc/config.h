@@ -1,179 +1,230 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// =============================================================================
+// Debug and Feature Toggles
+// =============================================================================
 /*
-* config.h
-* Configuration file for the MCU application
-*/
+ * NO_DEBUG         - Deactivate debug prints.
+ *                    Default: 0 (debug prints enabled).
+ *
+ * NO_DEBUGPRINT    - Deactivate debug prints.
+ *                    Default: 0 (debug prints enabled).
+ * 
+ * NO_PERF          - Deactivate all performance metrics.
+ *                    Default: 0 (performance metrics enabled).
+ *
+ * NO_OPTIMIZATIONS - Deactivate all optimizations.
+ *                    Default: 0 (optimizations active).
+ *
+ * USE_BUTTON       - Enables the use of a button (should not be needed).
+ *                    Default: 0 (button support disabled).
+ */
+#define NO_UART          0
+#define NO_DEBUG         0
+#define NO_DEBUGPRINT    0
+#define NO_PERF          0
+#define NO_OPTIMIZATIONS 0
+#define USE_BUTTON       0
 
-#ifndef INC_CONFIG_H_
-#define INC_CONFIG_H_
+// =============================================================================
+// Optimization Defines
+// =============================================================================
+/*
+ * OPT_CHAIN_ON  - Activates whole chain optimizations (80 -> 41k speedup).
+ *                 Default: 1 (enabled).
+ *
+ * OPT_PACKET_ON - Activates optimizations for packetization.
+ *                 (By default, hardware acceleration is used.)
+ *                 Default: 1 (enabled).
+ */
+#define OPT_CHAIN_ON   1
+#define OPT_PACKET_ON  1
 
-#include <stdio.h>
+// =============================================================================
+// Chain Defines
+// =============================================================================
+/*
+ * MEL_VEC_LENGTH - Length parameter for MEL processing.
+ *               Default: 20.
+ *
+ * MEL_NUM_VEC - Number of MEL bins.
+ *               Default: 20.
+ *
+ * SAMPLES_NUM - FFT size parameter.
+ *               Default: 512.
+ *
+ * OPT_MEL     - Enable (1) or disable (0) MEL optimization.
+ *               Default: 0 (disabled).
+ *
+ * OPT_PREP    - Enable (1) or disable (0) pre-processing optimization.
+ *               Default: 0 (disabled).
+ *
+ * OPT_AMPL    - Enable (1) or disable (0) amplitude optimization.
+ *               Default: 0 (disabled).
+ */
+#define MEL_VEC_LENGTH   20
+#define MEL_NUM_VEC      20
+#define SAMPLES_NUM      512
 
-/*==============================================================================
-*                          DO NOT MODIFY SECTION
-*============================================================================*/
+#define OPT_MEL      0
+#define OPT_PREP     0
+#define OPT_AMPL     0
 
-// Runtime parameters - DO NOT CHANGE
-#define MAIN_APP 0
-#define EVAL_RADIO 1
+// =============================================================================
+// Threshold Defines
+// =============================================================================
+/*
+ * THRESHOLD_MODE       - Mode of the threshold:
+ *                          0: Deactivated
+ *                          1: Full-mean
+ *                          2: Vector-based
+ *                          3: Singular
+ *                        Default: 0 (deactivated).
+ *
+ * THRESHOLD_LV1_VALUE  - Threshold level 1 value.
+ *                        Default: 100.
+ *
+ * THRESHOLD_LV2_VALUE  - Threshold level 2 value.
+ *                        Default: 200.
+ *
+ * THRESHOLD_LV3_VALUE  - Threshold level 3 value.
+ *                        Default: 300.
+ */
+#define THRESHOLD_MODE       0
+#define THRESHOLD_LV1_VALUE  100
+#define THRESHOLD_LV2_VALUE  200
+#define THRESHOLD_LV3_VALUE  300
 
-#define RUN_CONFIG MAIN_APP
+// =============================================================================
+// Approximate Amplitude Defines
+// =============================================================================
+/*
+ * AMPL_APPROX         - Approximation mode for amplitude (tied to OPT_AMPL).
+ *                       Default: 0.
+ *
+ * AMPL_ABS_INPUTS     - Use absolute value processing on inputs.
+ *                       Default: 0 (disabled).
+ *
+ * AMPL_MAX_SUM_INPUTS - Maximum number of inputs to sum (allowed: 1 or 2).
+ *                       Default: 1.
+ *
+ * AMPL_ABS_OUTPUTS    - Use absolute value processing on outputs.
+ *                       Default: 0 (disabled).
+ */
+#define AMPL_APPROX         0
+#define AMPL_ABS_INPUTS     0
+#define AMPL_MAX_SUM_INPUTS 1
+#define AMPL_ABS_OUTPUTS    0
 
-/*==============================================================================
-*                          CONFIGURABLE SECTION
-*============================================================================*/
+// =============================================================================
+// Performance Measurement Defines
+// =============================================================================
+/*
+ * Top Level Performance Metrics:
+ * PERF_CHAIN  - Overall chain performance measurement.
+ *               Default: 1 (enabled).
+ *
+ * PERF_PACKET - Overall packet performance measurement.
+ *               Default: 1 (enabled).
+ *
+ * PERF_SEND   - Performance measurement for the S2LP send operation.
+ *               Default: 1 (enabled).
+ *
+ * Detailed Chain Performance Stages:
+ * PERF_CHAIN_PREP  - Pre-FFT stage.
+ *                    Default: 1 (enabled).
+ *
+ * PERF_CHAIN_FFT   - FFT stage.
+ *                    Default: 1 (enabled).
+ *
+ * PERF_CHAIN_AMPL  - Amplitude stage.
+ *                    Default: 1 (enabled).
+ *
+ * PERF_CHAIN_MEL   - MEL stage.
+ *                    Default: 1 (enabled).
+ *
+ * Detailed Packet Performance Stages:
+ * PERF_PACKET_ENCODE - Encoding stages (2 stages).
+ *                     Default: 1 (enabled).
+ *
+ * PERF_PACKET_AES    - MAC stage.
+ *                     Default: 1 (enabled).
+ */
+#define PERF_CHAIN          1
+#define PERF_PACKET         1
+#define PERF_SEND           1
 
-/*------------------------------------------------------------------------------
-* Debug Configuration Master
-*----------------------------------------------------------------------------*/
+#define PERF_CHAIN_PREP     1
+#define PERF_CHAIN_FFT      1
+#define PERF_CHAIN_AMPL     1
+#define PERF_CHAIN_MEL      1
 
-// General define for setting the MCU in no debug mode
-#define NO_DEBUG 1
+#define PERF_PACKET_ENCODE  1
+#define PERF_PACKET_AES     1
 
-// Deactivate the need to use the button to trigger the system
-#define NO_BUTTON 0
 
-// Deactivate the loop unrolling optimizations that can make the compilation complain
-#define NO_LOOP_UNROLLING 0
+// =============================================================================
+// Implementation redefines and checks
+// =============================================================================
 
-// Deactivate the sleep mode of the S2LP
-#define NO_S2LP_SLEEP 0
+// Deactivate UART and debug prints with the NO_UART flag
+#if NO_UART == 1
+    #undef NO_DEBUG
+    #undef NO_DEBUGPRINT
+    #define NO_DEBUG      1
+    #define NO_DEBUGPRINT 1
+#endif
 
-/*------------------------------------------------------------------------------
-* System Configuration
-*----------------------------------------------------------------------------*/
-
-// General UART enable/disable (disable for low-power operation)
-#define ENABLE_UART 1
-
-// Acquisition Mode
-// Set to 1 for continuous mode (start/stop on button press)
-// Set to 0 for single packet mode (send one packet per button press)
-#define CONTINUOUS_ACQ 1
-
-// Acquisition Overlap mode (BUG: Line vertical at position 3 during overlap)
-#define ACQ_STOP_START 0  // Stop the acquisition before starting a new one
-#define ACQ_OVERLAP 1     // Overlap the acquisition (start a new one before stopping the previous one)
-#define ACQ_MODE ACQ_OVERLAP  // Select either ACQ_STOP_START or ACQ_OVERLAP
-
-/*------------------------------------------------------------------------------
-* Radio & Crypto Configuration
-*----------------------------------------------------------------------------*/
-// Enable/disable radio communication
-#define ENABLE_RADIO 1
-
-// Sender ID
-#define SENDER_ID 0
-
-// Optimize for the encoding of the packet, and the position of the crypto
-#define PACKET_OPT_LEVEL 1 // 0 (No optimization), 1 (Optimization)
-
-// Cryptography Implementation Selection
-#define USE_SOFTWARE_CRYPTO 0  // Performance: 521391 cycles per packet
-#define USE_HARDWARE_CRYPTO 1  // Performance: 17244 cycles per packet
-#define USE_CRYPTO USE_HARDWARE_CRYPTO  // Select either USE_SOFTWARE_CRYPTO or USE_HARDWARE_CRYPTO
-
-/*------------------------------------------------------------------------------
-* Signal Processing Configuration
-*----------------------------------------------------------------------------*/
-// Spectrogram Parameters
-#define SAMPLES_PER_MELVEC 512
-#define MELVEC_LENGTH 20
-#define N_MELVECS 20
-
-// Chain Optimizations (even further)
-#define CHAIN_SIGNAL_PREP_OPT_LEVEL 2 //  0 (No optimization), 1 (Optimization), 2 (Unrolled optimization)
-#define CHAIN_OPTIMIZE_MAGNITUDE 2 // 0 (No optimization), 1 (Optimization), 2 (Unrolled optimization)
-#define CHAIN_OPTIMIZE_MEL_OPT 1 // 0 (No other optimization), 1 (Unrolled optimization)
-
-// Magnitude Approximation
-#define MAG_APPROX_PURE_MAX 0 // Perf: 88.5  :  max(R, I)
-#define MAG_APPROX_ABS_SUM 1 // Perf: 88.6   :  abs(R) + abs(I)
-#define MAG_APPROX_PURE_SUM 2 // Perf: 84.0  :  R + I
-#define MAG_APPROX_ABS_MAX 3 // Perf: 83.7   :  max(abs(R), abs(I))
-#define MAG_APPROX MAG_APPROX_PURE_MAX // Select either MAG_APPROX_PURE_MAX, MAG_APPROX_ABS_SUM, MAG_APPROX_PURE_SUM, or MAG_APPROX_ABS_MAX
-
-// Mel Processing Mode
-#define MEL_MODE_MATRIX 0     // Performance: 20900 cycles per vector
-#define MEL_MODE_FILTERBANK 1 // Performance: 4246 cycles per vector
-#define MEL_MODE MEL_MODE_FILTERBANK  // Select either MEL_MODE_FILTERBANK or MEL_MODE_MATRIX
-
-// Thresholding Configuration
-#define THRESHOLD_HARD_FULL 0
-#define THRESHOLD_HARD_PER_MELVEC 1
-#define THRESHOLD_LOOSE 2
-#define USE_THRESHOLD 1 // Enable/disable thresholding
-#define THRESHOLD_VALUE 0x2 // Threshold value for the Mel vectors
-#define THRESHOLD_MODE THRESHOLD_HARD_FULL // Select either THRESHOLD_HARD_FULL, THRESHOLD_HARD_PER_MELVEC, or THRESHOLD_LOOSE
-
-/*------------------------------------------------------------------------------
-* Debug Configuration
-*----------------------------------------------------------------------------*/
-// Enable/disable performance measurements
-#define PERF_COUNT 1
-
-// Selective performance measurements (set to 0 to disable)
-#define MEASURE_CYCLES_FULL_SPECTROGRAM 1 // (Turns off all other signal processing measurements)
-
-#define MEASURE_CYCLES_SIGNAL_PROC_OP 1
-#define MEASURE_CYCLES_FFT 1
-#define MEASURE_CYCLES_MEL 1
-
-#define MEASURE_CYCLES_THRESHOLD 1
-#define MEASURE_CYCLES_ENCODE_PACKET 0
-#define MEASURE_CYCLES_CBC_MAC 1
-#define MEASURE_CYCLES_SEND_PACKET 1
-
-#define MEASURE_CYCLES_PRINT_FV 0
-#define MEASURE_CYCLES_PRINT_PACKET 0
-
-// Enable/disable debug printing
-#define DEBUGP 1
-
-// Enable/disable printing for elements of the system
-#define PRINT_FV_SPECTROGRAM 0
-#define PRINT_ENCODED_PACKET 1
-
-/*==============================================================================
-*                          DO NOT MODIFY SECTION
-*============================================================================*/
+// Deactivate all prints and performance metrics with the NO_DEBUG flag
+#if NO_DEBUG == 1
+    #undef NO_DEBUGPRINT
+    #undef NO_PERF
+    #define NO_DEBUGPRINT 1
+    #define NO_PERF       1
+#endif
 
 // Debug print macro
-#if (DEBUGP == 1)
-#define DEBUG_PRINT(...) do{ printf(__VA_ARGS__ ); } while( 0 )
+#if (NO_DEBUGPRINT == 0)
+    #define DEBUG_PRINT(...) do{ printf(__VA_ARGS__ ); } while( 0 )
 #else
-#define DEBUG_PRINT(...) do{ } while ( 0 )
+    #define DEBUG_PRINT(...) do{ } while ( 0 )
 #endif
 
-// Re-define the DEBUGP, PERF_COUNT, and ENABLE_UART macros if NO_DEBUG is set
-#if NO_DEBUG == 1
-#undef DEBUGP
-#undef PERF_COUNT
-#undef ENABLE_UART
-#define DEBUGP 0
-#define PERF_COUNT 0
-#define ENABLE_UART 0
+// Deactivate performance metrics with the NO_PERF flag
+#if NO_PERF == 1
+    #undef PERF_CHAIN
+    #undef PERF_PACKET
+    #undef PERF_SEND
+    #undef PERF_CHAIN_PREP
+    #undef PERF_CHAIN_FFT
+    #undef PERF_CHAIN_AMPL
+    #undef PERF_CHAIN_MEL
+    #undef PERF_PACKET_ENCODE
+    #undef PERF_PACKET_AES
+    #define PERF_CHAIN          0
+    #define PERF_PACKET         0
+    #define PERF_SEND           0
+    #define PERF_CHAIN_PREP     0
+    #define PERF_CHAIN_FFT      0
+    #define PERF_CHAIN_AMPL     0
+    #define PERF_CHAIN_MEL      0
+    #define PERF_PACKET_ENCODE  0
+    #define PERF_PACKET_AES     0
 #endif
 
-// Re-define the optimization macros if NO_LOOP_UNROLLING is set
-#if NO_LOOP_UNROLLING == 1
-    #if CHAIN_SIGNAL_PREP_OPT_LEVEL == 2
-        #undef CHAIN_SIGNAL_PREP_OPT_LEVEL
-        #define CHAIN_SIGNAL_PREP_OPT_LEVEL 1
-    #endif
-    #if CHAIN_OPTIMIZE_MAGNITUDE == 2
-        #undef CHAIN_OPTIMIZE_MAGNITUDE
-        #define CHAIN_OPTIMIZE_MAGNITUDE 1
-    #endif
-    #if CHAIN_OPTIMIZE_MEL_OPT == 1
-        #undef CHAIN_OPTIMIZE_MEL_OPT
-        #define CHAIN_OPTIMIZE_MEL_OPT 0
-    #endif
+// Deactivate optimizations with the NO_OPTIMIZATIONS flag
+#if NO_OPTIMIZATIONS == 1
+    #undef OPT_CHAIN_ON
+    #undef OPT_PACKET_ON
+    #undef OPT_MEL
+    #undef OPT_PREP
+    #undef OPT_AMPL
+    #define OPT_CHAIN_ON   0
+    #define OPT_PACKET_ON  0
+    #define OPT_MEL        0
+    #define OPT_PREP       0
+    #define OPT_AMPL       0
 #endif
 
-// If CBC mac cycle count
-#if MEASURE_CYCLES_CBC_MAC == 1
-    #undef MEASURE_CYCLES_ENCODE_PACKET
-    #define MEASURE_CYCLES_ENCODE_PACKET 0
-#endif
-
-#endif /* INC_CONFIG_H_ */
+#endif // CONFIG_H

@@ -122,9 +122,9 @@ def gen_mel_header(f_sample:int, num_fft:int, num_mel:int, header_file:str):
 def main():
     header_file_to_read = os.path.join(get_script_path(), "../Core/Inc/config.h")
     defines = read_header_file(header_file_to_read)
-    num_fft = int(defines.get("SAMPLES_PER_MELVEC", 512))
-    mel_len = int(defines.get("MELVEC_LENGTH", 40))
-    num_mel = int(defines.get("N_MELVECS", 20))
+    num_fft = int(defines.get("SAMPLES_NUM", 512))
+    mel_len = int(defines.get("MEL_VEC_LENGTH", 40))
+    num_mel = int(defines.get("MEL_NUM_VEC", 20))
     f_sample = num_fft * num_mel
     header_file = os.path.join(get_script_path(), "../Core/Inc/mel_filter_bank.h")
     gen_mel_header(f_sample, num_fft, mel_len, header_file)
