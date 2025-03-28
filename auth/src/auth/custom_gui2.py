@@ -231,10 +231,10 @@ def get_gui_status():
         return False
     
 def launch_gui_process():
-    # Launch the GUI in a separate process
-    import subprocess
+    # Launch the GUI in a separate process using the same interpreter.
+    import subprocess, sys, os
     root = os.path.dirname(os.path.abspath(__file__))
-    subprocess.Popen(["python", root+"/custom_gui2.py"], cwd=root)
+    subprocess.Popen([sys.executable, os.path.join(root, "custom_gui2.py")], cwd=root)
 
 if __name__ == '__main__':
     window, app = generate_gui_thread()

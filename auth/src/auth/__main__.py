@@ -17,7 +17,7 @@ from leaderboard.submit import submit
 
 from . import PRINT_PREFIX, packet
 
-from custom_gui2 import get_gui_status, launch_gui_process
+from .custom_gui2 import get_gui_status, launch_gui_process
 
 load_dotenv()
 
