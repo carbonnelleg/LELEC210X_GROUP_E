@@ -6,8 +6,9 @@ import click
 import serial
 import zmq
 import numpy as np
-import requests
 import json
+import base64
+import asyncio
 
 import auth.model_prediction as mp
 import common
@@ -16,8 +17,7 @@ from common.logging import logger
 from leaderboard.submit import submit
 
 from . import PRINT_PREFIX, packet
-
-from .custom_gui2 import get_gui_status, launch_gui_process
+from . import custom_gui2_interface  # new module import
 
 load_dotenv()
 
@@ -65,7 +65,7 @@ def hex_to_bytes(ctx: click.Context, param: click.Parameter, value: str) -> byte
     "--output",
     default="-",
     type=click.File("w"),
-    help="Where to read the input stream. Default to '-', a.k.a. stdout.",
+    help="Where to write the output stream. Default to '-', a.k.a. stdout.",
 )
 @click.option(
     "--serial-port",
@@ -124,9 +124,7 @@ def main(
 
     unwrapper = packet.PacketUnwrapper(
         key=auth_key,
-        allowed_senders=[
-            0,
-        ],
+        allowed_senders=[0],
         authenticate=authenticate,
     )
 
@@ -142,9 +140,9 @@ def main(
 
             while True:
                 line = ser.read_until(b"\n").decode("ascii").strip()
-                packet = parse_packet(line)
-                if packet is not None:
-                    yield packet
+                pkt = parse_packet(line)
+                if pkt is not None:
+                    yield pkt
 
     elif _input:  # Read from file-like
 
@@ -153,11 +151,11 @@ def main(
             logger.info(how_to_kill)
 
             for line in _input:
-                packet = parse_packet(line)
-                if packet is not None:
-                    yield packet
+                pkt = parse_packet(line)
+                if pkt is not None:
+                    yield pkt
 
-    else:  # Read from zmq GNU Radio interface
+    else:  # Read from ZMQ GNU Radio interface
 
         def reader() -> Iterator[str]:
             context = zmq.Context()
@@ -176,7 +174,7 @@ def main(
                 yield msg
 
     if gui:
-        gui_process = launch_gui_process()
+        gui_process = custom_gui2_interface.launch_gui_process()
         logger.info("GUI process launched.")
 
     input_stream = reader()
@@ -184,9 +182,7 @@ def main(
         try:
             sender, payload = unwrapper.unwrap_packet(msg)
             logger.debug(f"From {sender}, received packet: {payload.hex()}")
-            # myType = type(payload)
-            # output.write(f'my type is {myType}\n')
-            # myClass = int.from_bytes(payload, 'big')%5
+
             myClass, this_fv, prediction = mp.model_prediction(payload)
             if REMOTE:
                 hostname = remote_hostname
@@ -196,26 +192,32 @@ def main(
                 key = local_key
 
             if gui:
-                data = {
+                # Prepare the payload for the GUI interface.
+                # Note: custom_gui2_interface.send_packet expects current_packet_data as a base64 string.
+                gui_data = {
                     "current_class_names": ["chainsaw", "fire", "fireworks", "gun"],
                     "current_class_probas": prediction,
                     "current_feature_vector": this_fv,
-                    "current_packet_data": payload.hex(),
+                    # Convert raw packet bytes into a base64-encoded string.
+                    "current_packet_data": base64.b64encode(payload).decode('utf-8'),
                     "current_choice": myClass,
+                    "mel_spec_len": melvec_length,
+                    "mel_spec_num": n_melvecs,
                 }
-                response = requests.post("http://localhost:8000", json=data)
-                logger.debug(f"Response status code: {response.status_code}")
-            
-            #Checking the threshold
-            if myClass is None:
-                pass
-            else:
+                # Schedule the asynchronous send_packet task using the current event loop.
+                asyncio.get_event_loop().create_task(
+                    custom_gui2_interface.send_packet(gui_data)
+                )
+                logger.debug("Sent GUI update via custom_gui2_interface.")
+
+            # Checking the threshold and submitting results.
+            if myClass is not None:
                 submit(myClass, url=hostname, key=key)
                 output.write(f'my class is {myClass}\n')
-            # output.write(PRINT_PREFIX + payload.hex() + "\n")
             output.flush()
-            
+
         except packet.InvalidPacket as e:
-            logger.error(
-                f"Invalid packet error: {e.args[0]}",
-            )
+            logger.error(f"Invalid packet error: {e.args[0]}")
+
+if __name__ == "__main__":
+    main()
