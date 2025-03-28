@@ -203,7 +203,7 @@ def main(
                     "current_packet_data": payload.hex(),
                     "current_choice": myClass,
                 }
-                response = requests.post(hostname, json=data)
+                response = requests.post("http://localhost:8000", json=data)
                 logger.debug(f"Response status code: {response.status_code}")
             
             #Checking the threshold
