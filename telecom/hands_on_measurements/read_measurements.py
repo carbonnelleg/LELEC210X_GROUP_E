@@ -399,6 +399,93 @@ def plot_false_miss_detection_vs_txp(
     return fig
 
 
+def plot_snr_vs_txp(
+    data: List[Tuple[np.array, np.array]],
+    labels: Optional[List[str]] = None,
+    save: Optional[str] = None
+) -> plt.Figure:
+    """
+    Plots SNR vs. TXP as boxplots for each TXP group.
+    
+    Parameters
+    ----------
+    data : List[Tuple[np.array, np.array]]
+        List of (txp_values, snr_values) doublets. Each doublet corresponds to one dataset.
+    labels : List[str], optional
+        List of labels for each dataset.
+    save : str, optional
+        If provided, saves the figure to the specified file path.
+
+    Returns
+    -------
+    fig : plt.Figure
+        The generated matplotlib figure.
+    """
+    fig, ax = plt.subplots()
+
+    # Define colors for datasets
+    colors = ["red", "blue", "green", "purple", "orange", "cyan"]  # Cycle through colors
+
+    num_datasets = len(data)
+    if labels is None:
+        labels = [f"Dataset {i+1}" for i in range(num_datasets)]
+
+    all_txp = set()  # Track unique TXP values across datasets
+
+    # Precompute grouped SNR values for each dataset
+    dataset_snr_by_txp = []
+
+    for i, (txp_values, snr_values) in enumerate(data):
+        if txp_values.size == 0:
+            raise ValueError(f"TXP values array in dataset {i} is empty.")
+
+        # Filter out TXP = 0
+        valid_indices = txp_values != 0.0
+        txp_values = txp_values[valid_indices]
+        snr_values = snr_values[valid_indices]
+
+        unique_txp = np.unique(txp_values)
+        all_txp.update(unique_txp)
+
+        # Group SNR values per TXP
+        snr_by_txp = [snr_values[txp_values == txp] for txp in unique_txp]
+        dataset_snr_by_txp.append((unique_txp, snr_by_txp, labels[i]))
+
+    # Sort TXP values for consistent ordering
+    sorted_txp = sorted(all_txp)
+
+    # Create boxplots for each dataset
+    width = 0.6 / num_datasets  # Adjust width based on dataset count
+    for i, (unique_txp, snr_by_txp, label) in enumerate(dataset_snr_by_txp):
+        positions = [sorted_txp.index(txp) + (i - (num_datasets - 1) / 2) * width for txp in unique_txp]
+        ax.boxplot(
+            snr_by_txp,
+            positions=positions,
+            widths=width,
+            patch_artist=True,
+            boxprops=dict(facecolor=colors[i % len(colors)], alpha=0.6),
+            medianprops=dict(color="black"),
+            whiskerprops=dict(color=colors[i % len(colors)]),
+            capprops=dict(color=colors[i % len(colors)])
+        )
+        ax.scatter(unique_txp, [np.median(s) for s in snr_by_txp], color=colors[i % len(colors)], label=label, zorder=3)
+
+    ax.set_xticks(range(len(sorted_txp)))
+    ax.set_xticklabels(sorted_txp)
+    ax.set_xlabel("TXP")
+    ax.set_ylabel("SNR")
+    ax.set_title("SNR vs. TXP (Boxplot)")
+    ax.grid(True, linestyle="--", linewidth=0.5)
+    ax.legend()
+
+    # Save the figure if requested
+    if save is not None:
+        fig.savefig(__file__ + f"/../graphs/{save}", dpi=200)
+
+    plt.show()
+    
+    return fig
+
 
 def main():
 
@@ -442,8 +529,13 @@ def main():
         [(df_packets_1["TXP"], df_packets_1["BER"]),
          (df_packets_2["TXP"], df_packets_2["BER"])],
         labels=("With attenuator", "Without attenuator"),
-        save="Detection_rate.png"
-        )
+        save="Detection_rate.png")
+    
+    plot_snr_vs_txp(
+        [(df_packets_1["TXP"], df_packets_1["SNR"]),
+        (df_packets_2["TXP"], df_packets_2["SNR"])],
+        labels=("With attenuator", "Without attenuator"),
+        save="SNR_TXP.png")
 
 if __name__ == "__main__":
     main()

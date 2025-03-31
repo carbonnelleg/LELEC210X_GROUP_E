@@ -5,6 +5,7 @@ from functools import wraps
 from time import time
 from typing import Any, Callable, List, Union
 import os
+import subprocess
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
@@ -16,11 +17,13 @@ def get_measurements_logger(measurement_type: str ='main_app') -> logging.Logger
     :param measurement_type: Type of measurement (e.g., 'main_app', 'eval_radio').
     :return: Configured Logger object.
     """
-    log_dir = 'hands_on_measurements/data'
+    root_repo = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'],
+                                 stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
+    log_dir = 'telecom/hands_on_measurements/data'
     os.makedirs(log_dir, exist_ok=True)
 
     timestamp = datetime.now().strftime('t%Y%m%d_%H%M%S')
-    log_filename = f'../../../{log_dir}/{measurement_type}_measurements_{timestamp}.txt'
+    log_filename = os.path.join(root_repo, log_dir, f'{measurement_type}_measurements_{timestamp}.txt')
 
     logger = logging.getLogger(f'measurements_{measurement_type}')
     logger.setLevel(logging.INFO)
