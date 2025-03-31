@@ -17,12 +17,14 @@ import numpy as np
 import pickle
 from tensorflow.keras.models import load_model
 
+root = os.path.dirname(os.path.abspath(__file__))
+
 def old_model_prediction(payload):
     classnames = ['chainsaw', 'fire', 'fireworks', 'gun']
     this_fv = np.frombuffer(payload, dtype=np.uint16)
     
-    ocsvm_filename = "auth/src/auth/ocsvm_model.pkl"
-    cnn_filename = "auth/src/auth/CNN_model.keras"
+    ocsvm_filename = root + "/ocsvm_model.pkl"
+    cnn_filename = root + "/CNN_model.keras"
     
     # Charger les modèles
     ocsvm_model = pickle.load(open(ocsvm_filename, "rb"))
@@ -50,7 +52,7 @@ def old_model_prediction(payload):
 
 
 old_predictions = []
-model = tf.keras.models.load_model("auth/src/auth/CNN_model.keras")
+model = tf.keras.models.load_model(root + "/CNN_model.keras")
 def model_prediction(payload):
     this_fv = np.frombuffer(payload, dtype=np.uint16)
     mat = np.zeros((2, len(this_fv)))

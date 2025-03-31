@@ -19,6 +19,11 @@ absl-py==2.1.0
     # via keras
     # via tensorboard
     # via tensorflow-intel
+aiohappyeyeballs==2.6.1
+    # via aiohttp
+aiohttp==3.11.14
+aiosignal==1.3.2
+    # via aiohttp
 aniso8601==9.0.1
     # via flask-restx
 anyio==4.4.0
@@ -40,7 +45,10 @@ astunparse==1.6.3
     # via tensorflow-intel
 async-lru==2.0.4
     # via jupyterlab
+async-timeout==5.0.1
+    # via aiohttp
 attrs==24.2.0
+    # via aiohttp
     # via jsonschema
     # via referencing
 audioread==3.0.1
@@ -143,6 +151,9 @@ fonttools==4.53.1
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
+frozenlist==1.5.0
+    # via aiohttp
+    # via aiosignal
 gast==0.6.0
     # via tensorflow-intel
 gevent==24.2.1
@@ -174,6 +185,7 @@ idna==3.8
     # via httpx
     # via jsonschema
     # via requests
+    # via yarl
 importlib-metadata==8.4.0
     # via flask
     # via jupyter-client
@@ -290,6 +302,9 @@ ml-dtypes==0.4.1
     # via tensorflow-intel
 msgpack==1.0.8
     # via librosa
+multidict==6.2.0
+    # via aiohttp
+    # via yarl
 namex==0.0.8
     # via keras
 nbclient==0.10.0
@@ -373,6 +388,9 @@ prometheus-client==0.20.0
     # via jupyter-server
 prompt-toolkit==3.0.47
     # via ipython
+propcache==0.3.1
+    # via aiohttp
+    # via yarl
 protobuf==5.29.3
     # via tensorboard
     # via tensorflow-intel
@@ -400,10 +418,16 @@ pyqt5-sip==12.15.0
     # via pyqt5
 pyqt6==6.8.1
     # via contrib
+    # via pyqt6-webengine
 pyqt6-qt6==6.8.2
     # via pyqt6
 pyqt6-sip==13.10.0
     # via pyqt6
+    # via pyqt6-webengine
+pyqt6-webengine==6.8.0
+    # via auth
+pyqt6-webengine-qt6==6.8.2
+    # via pyqt6-webengine
 pyqtgraph==0.13.7
 pyserial==3.5
     # via auth
@@ -442,6 +466,7 @@ pyzmq==26.2.0
     # via ipykernel
     # via jupyter-client
     # via jupyter-server
+qasync==0.27.1
 referencing==0.35.1
     # via jsonschema
     # via jsonschema-specifications
@@ -564,6 +589,7 @@ typing-extensions==4.12.2
     # via ipython
     # via librosa
     # via limits
+    # via multidict
     # via optree
     # via pydantic
     # via tensorflow-intel
@@ -601,7 +627,9 @@ wsproto==1.2.0
 wtforms==3.1.2
     # via flask-wtf
 xgboost==2.1.4
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@da7223d4aa42ff9fc680b0951d043dd03cec2d30
+yarl==1.18.3
+    # via aiohttp
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@4e714f9df1ed2cccd51df60d45ff5504abe827b7
 zipp==3.20.1
     # via importlib-metadata
     # via importlib-resources

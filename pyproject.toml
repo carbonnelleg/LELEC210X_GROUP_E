@@ -12,6 +12,8 @@ dependencies = [
     "xgboost>=2.1.3",
     "pycryptodome>=3.21.0",
     "pyqtgraph>=0.13.7",
+    "aiohttp>=3.11.14",
+    "qasync>=0.27.1",
 ]
 
 [tool.ruff]
