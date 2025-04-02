@@ -85,12 +85,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 static void acquire_and_send_packet() {
-	if (StartADCAcq(N_MELVECS) != HAL_OK) {
+	if (StartADCAcq() != HAL_OK) {
 		DEBUG_PRINT("Error while enabling the DMA\r\n");
 	}
-	while (!IsADCFinished()) {
-		__WFI();
-	}
+	__WFI();
 }
 
 void run(void)
@@ -106,7 +104,7 @@ void run(void)
 	{
     // If NO_BUTTON is set, we acquire and send the packet directly and continuously
     // Otherwise, we wait for the button press to acquire and send the packet
-    #if NO_BUTTON == 1
+    #if USE_BUTTON == 0
       acquire_and_send_packet();
     #else
       // Wait for the button press
@@ -117,16 +115,11 @@ void run(void)
         HAL_Delay(200);
       }
       btn_press = 0;
-      #if (CONTINUOUS_ACQ == 1)
-        // Continuous acquisition while the button is not pressed
-        while (!btn_press) {
-          acquire_and_send_packet();
-        }
-        btn_press = 0;
-      #else
-        // Single packet acquisition, then go back to waiting for the button press
+      // Continuous acquisition while the button is not pressed
+      while (!btn_press) {
         acquire_and_send_packet();
-      #endif
+      }
+      btn_press = 0;
     #endif
 	}
 }
@@ -176,7 +169,6 @@ int main(void)
   RetargetInit(&hlpuart1);
   DEBUG_PRINT("Hello world\r\n");
 
-#if ENABLE_RADIO
   // Enable S2LP Radio
   HAL_StatusTypeDef err = S2LP_Init(&hspi1);
   if (err)  {
@@ -185,7 +177,6 @@ int main(void)
   } else {
 	  DEBUG_PRINT("[S2LP] Init OK\r\n");
   }
-#endif
 
   if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK) {
 	  DEBUG_PRINT("Error while calibrating the ADC\r\n");
@@ -199,13 +190,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-#if (RUN_CONFIG == MAIN_APP)
-  run();
-#elif (RUN_CONFIG == EVAL_RADIO)
-  eval_radio();
-#else
-#error "Wrong value for RUN_CONFIG."
-#endif
+    run();
 
     /* USER CODE END WHILE */
 

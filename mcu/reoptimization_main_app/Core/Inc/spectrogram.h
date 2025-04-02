@@ -9,6 +9,7 @@
 #define INC_SPECTROGRAM_H_
 
 #include "arm_math.h"
+#include "config.h"
 
 static inline float q15_to_float(q15_t x)
 {
@@ -24,10 +25,7 @@ static inline q15_t float_to_q15(float x)
 	return y;
 }
 
-// Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
-void Spectrogram_Format(q15_t *buf);
-
-// Compute spectrogram of samples into melvec. Modifies samples.
-void Spectrogram_Compute(q15_t *samples, q15_t *melvector);
+// Compute the whole mel spectrogram using a FFT*Mel size buffer
+Full_spectrogram_compute(uint16_t *buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH]);
 
 #endif /* INC_SPECTROGRAM_H_ */

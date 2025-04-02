@@ -6,11 +6,10 @@
 #include "arm_math.h"
 
 // ADC parameters
-#define ADC_BUF_SIZE SAMPLES_PER_MELVEC
+#define ADC_BUF_SIZE SAMPLES_NUM*MEL_NUM_VEC
 
 
-int StartADCAcq(int32_t n_bufs);
-int IsADCFinished(void);
+int StartADCAcq(void);
 
 extern ADC_HandleTypeDef hadc1;
 

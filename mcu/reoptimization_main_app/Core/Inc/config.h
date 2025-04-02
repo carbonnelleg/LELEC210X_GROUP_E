@@ -53,6 +53,9 @@
  *
  * SAMPLES_NUM - FFT size parameter.
  *               Default: 512.
+ * 
+ * SENDER_ID   - ID of the sender.
+ *               Default: 0x01.
  *
  * OPT_MEL     - Enable (1) or disable (0) MEL optimization.
  *               Default: 0 (disabled).
@@ -66,6 +69,8 @@
 #define MEL_VEC_LENGTH   20
 #define MEL_NUM_VEC      20
 #define SAMPLES_NUM      512
+
+#define SENDER_ID        0x01
 
 #define OPT_MEL      0
 #define OPT_PREP     0
