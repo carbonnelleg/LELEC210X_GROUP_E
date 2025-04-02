@@ -14,53 +14,6 @@
 
 #include "mel_filter_bank.h"
 
-#if MEASURE_CYCLES_FULL_SPECTROGRAM == 1
-	#define START_CYCLE_COUNT_SIGNAL_PROC_OP()
-	#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str)
-	#define START_CYCLE_COUNT_FFT()
-	#define STOP_CYCLE_COUNT_FFT(str)
-	#define START_CYCLE_COUNT_MEL()
-	#define STOP_CYCLE_COUNT_MEL(str)
-#else
-	// Timings for the other operations
-	#if MEASURE_CYCLES_SIGNAL_PROC_OP == 0
-		#define START_CYCLE_COUNT_SIGNAL_PROC_OP()
-		#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str)
-	#else
-		#define START_CYCLE_COUNT_SIGNAL_PROC_OP() start_cycle_count()
-		#define STOP_CYCLE_COUNT_SIGNAL_PROC_OP(str) stop_cycle_count(str)
-	#endif
-
-	// Timings for the fft
-	#if MEASURE_CYCLES_FFT == 0
-		#define START_CYCLE_COUNT_FFT()
-		#define STOP_CYCLE_COUNT_FFT(str)
-	#else
-		#define START_CYCLE_COUNT_FFT() start_cycle_count()
-		#define STOP_CYCLE_COUNT_FFT(str) stop_cycle_count(str)
-	#endif
-
-	// Mel transform timings
-	#if MEASURE_CYCLES_MEL == 0
-		#define START_CYCLE_COUNT_MEL()
-		#define STOP_CYCLE_COUNT_MEL(str)
-	#else
-		#define START_CYCLE_COUNT_MEL() start_cycle_count()
-		#define STOP_CYCLE_COUNT_MEL(str) stop_cycle_count(str)
-	#endif
-#endif // MEASURE_CYCLES_FULL_SPECTROGRAM
-
-#ifdef ALIGN_BUFFER_SIGNALS
-// Using ARM CMSIS alignment attribute
-ALIGN_32BYTES(q15_t buf    [  SAMPLES_PER_MELVEC  ]); // Windowed samples
-ALIGN_32BYTES(q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]); // Double size buffer
-ALIGN_32BYTES(q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]); // Intermediate buffer
-#else
-q15_t buf    [  SAMPLES_PER_MELVEC  ]; // Windowed samples
-q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed for arm_rfft_q15
-q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]; // Intermediate buffer for arm_mat_mult_fast_q15
-#endif
-
 #if CHAIN_OPTIMIZE_MEL_OPT == 0
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
 	// Pre-check all triangles once (cache locality)
