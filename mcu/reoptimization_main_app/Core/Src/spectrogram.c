@@ -14,27 +14,6 @@
 
 #include "mel_filter_bank.h"
 
-#if CHAIN_OPTIMIZE_MEL_OPT == 0
-void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
-	// Pre-check all triangles once (cache locality)
-    for (size_t i = 0; i < mel_len; i++) {
-        if (mel_triangles[i].idx_offset + mel_triangles[i].triangle_len > fft_len) {
-            DEBUG_PRINT("Error: Mel triangle %d is too large\n", i);
-            return;
-        }
-    }
-
-	// Process all Mel triangles at once (cache locality optimization)
-    for (size_t i = 0; i < mel_len; i++) {
-		q15_t* fft_samples = &fft_array[mel_triangles[i].idx_offset];
-		q63_t mel_result;
-		// Compute the dot product of the FFT samples and the Mel triangle
-        arm_dot_prod_q15(fft_samples,  mel_triangles[i].values,  mel_triangles[i].triangle_len, &mel_result);
-		// Store the result in the Mel array
-		mel_array[i] = clip_q63_to_q15(mel_result);
-    }
-}
-#elif CHAIN_OPTIMIZE_MEL_OPT == 1
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
 	// Process 4 triangles at once through loop unrolling, and register variables
 	for (size_t i = 0; i < mel_len; i += 4) {
@@ -73,7 +52,6 @@ void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t
 		mel_array[i] = clip_q63_to_q15(mel_result);
 	}
 }
-#endif
 
 // Step 1 : Pre-process the signal before computing the spectrogram
 // This function takes in a buffer of MEL_NUM_VEC * SAMPLES_NUM, and outputs the mel vectors in mel_vectors.
@@ -101,20 +79,20 @@ void step3_approximate_magnitude(q15_t *fft_buffer, q15_t *output_buffer)
 		q15_t imag = fft_buffer[2*i+1];
 
 		// Get the absolute value of the real and imaginary parts
-		#if MAG_APPROX == MAG_APPROX_ABS_MAX || MAG_APPROX == MAG_APPROX_ABS_SUM
+		#if AMPL_ABS_INPUTS == 1
 			real = real > 0 ? real : -real; // abs(real)
 			imag = imag > 0 ? imag : -imag; // abs(imag)
 		#endif
 
 		// Get the maximum values
-		#if   MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_ABS_MAX
+		#if   AMPL_MAX_SUM_INPUTS == 0
 			output_buffer[i] = real > imag ? real : imag; // max(real, imag)
-		#elif MAG_APPROX == MAG_APPROX_PURE_SUM || MAG_APPROX == MAG_APPROX_ABS_SUM
+		#elif AMPL_MAX_SUM_INPUTS == 1
 			output_buffer[i] = real + imag;  // real + imag
 		#endif
 
 		// Get the absolute value (so its always positive)
-		#if MAG_APPROX == MAG_APPROX_PURE_MAX || MAG_APPROX == MAG_APPROX_PURE_SUM
+		#if AMPL_ABS_OUTPUTS == 1
 			output_buffer[i] = output_buffer[i] > 0 ? output_buffer[i] : -output_buffer[i]; // abs(output_buffer[i])
 		#endif
 	}

@@ -111,7 +111,9 @@
  * AMPL_ABS_INPUTS     - Use absolute value processing on inputs.
  *                       Default: 0 (disabled).
  *
- * AMPL_MAX_SUM_INPUTS - Maximum number of inputs to sum (allowed: 1 or 2).
+ * AMPL_MAX_SUM_INPUTS - Use the maximum or sum of the inputs.
+ *                       0: Maximum
+ *                       1: Sum
  *                       Default: 1.
  *
  * AMPL_ABS_OUTPUTS    - Use absolute value processing on outputs.
