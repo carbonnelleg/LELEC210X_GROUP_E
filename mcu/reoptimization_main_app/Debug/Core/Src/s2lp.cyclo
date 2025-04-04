@@ -12,6 +12,7 @@
 ../Core/Src/s2lp.c:388:6:S2LP_SetModulation	1
 ../Core/Src/s2lp.c:407:6:S2LP_SetPALeveldBm	2
 ../Core/Src/s2lp.c:424:19:S2LP_Sleep	4
-../Core/Src/s2lp.c:440:19:S2LP_WakeUp	3
-../Core/Src/s2lp.c:456:19:S2LP_Init	5
-../Core/Src/s2lp.c:507:6:S2LP_IRQ_Handler	4
+../Core/Src/s2lp.c:440:19:S2LP_Standby	3
+../Core/Src/s2lp.c:456:19:S2LP_WakeUp	3
+../Core/Src/s2lp.c:472:19:S2LP_Init	5
+../Core/Src/s2lp.c:523:6:S2LP_IRQ_Handler	4

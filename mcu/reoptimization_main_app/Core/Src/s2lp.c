@@ -427,7 +427,23 @@ HAL_StatusTypeDef S2LP_Sleep(void)
 	HAL_StatusTypeDef err = S2LP_ReadReg(0, NULL, &radio_status); // fetch radio state
 
 	while (radio_status.MC_STATE != MC_STATE_SLEEP && radio_status.MC_STATE != MC_STATE_SLEEP_NOFIFO) {
-		err = S2LP_Command(CMD_STANDBY &radio_status);
+		err = S2LP_Command(CMD_SLEEP, &radio_status);
+		if (err) {
+			DEBUG_PRINT("[S2LP] Error: cannot enter sleep mode\r\n");
+			return HAL_ERROR;
+		}
+	}
+
+	return HAL_OK;
+}
+
+HAL_StatusTypeDef S2LP_Standby(void)
+{
+	S2LPStatus radio_status;
+	HAL_StatusTypeDef err = S2LP_ReadReg(0, NULL, &radio_status); // fetch radio state
+
+	while (radio_status.MC_STATE != MC_STATE_STANDBY) {
+		err = S2LP_Command(CMD_STANDBY, &radio_status);
 		if (err) {
 			DEBUG_PRINT("[S2LP] Error: cannot enter sleep mode\r\n");
 			return HAL_ERROR;

@@ -59,12 +59,12 @@ void step1_123_batch_pre_process(q15_t *buffer)
 {
 	// 1.1 & 1.2 : Batch shift left by 3 to go from [0..4095] (12-bit) up into [0..32767] (Q15) and Batch remove DC component
 	for (int i = 0; i < SAMPLES_NUM*MEL_NUM_VEC; i++){ // TODO : Unroll this loop
-		buffer[i] = (q15_t)buffer[i]<<3 - (1<<14);
+		buffer[i] = ((q15_t)buffer[i]<<3) - ((q15_t)(1<<14));
 	}
 
 	// 1.3 : Parallel windowing of the signal
 	for (int i = 0; i < MEL_NUM_VEC; i++){ // TODO : Unroll this loop
-		arm_mult_q15(&buffer[i*SAMPLES_NUM], hamming_window, &buf[i*SAMPLES_NUM], SAMPLES_NUM);
+		arm_mult_q15(&buffer[i*SAMPLES_NUM], hamming_window, &buffer[i*SAMPLES_NUM], SAMPLES_NUM);
 	}
 }
 
@@ -126,7 +126,7 @@ void step4_mel_filter_apply(q15_t *buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VE
 	}
 }
 
-void Full_spectrogram_compute(uint16_t *buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH])
+void Full_spectrogram_compute(q15_t* buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH])
 {
 	// 4 Steps
 	//    1. Format the signal (expand to 16-bit, remove DC, windowing)

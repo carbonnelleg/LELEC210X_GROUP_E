@@ -97,7 +97,7 @@ void run(void)
 
   // Initialize the S2LP to the sleep mode if configured
   #if NO_S2LP_SLEEP == 0
-    S2LP_Sleep();
+    S2LP_Standby();
   #endif
 
 	while (1)
@@ -162,7 +162,7 @@ int main(void)
   MX_AES_Init();
   /* USER CODE BEGIN 2 */
 
-  if (ENABLE_UART) {
+  if (NO_UART == 1) {
 	  MX_LPUART1_UART_Init();
   }
 

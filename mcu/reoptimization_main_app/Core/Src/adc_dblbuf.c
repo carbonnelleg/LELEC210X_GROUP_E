@@ -44,10 +44,10 @@ static void print_encoded_packet(uint8_t *packet) {
 // Function to encode the packet
 static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
 	// BE encoding of each mel coef
-	for (size_t i=0; i<N_MELVECS; i++) {
-		for (size_t j=0; j<MELVEC_LENGTH; j++) {
-			(packet+PACKET_HEADER_LENGTH)[(i*MELVEC_LENGTH+j)*2]   = mel_vectors[i][j] >> 8;
-			(packet+PACKET_HEADER_LENGTH)[(i*MELVEC_LENGTH+j)*2+1] = mel_vectors[i][j] & 0xFF;
+	for (size_t i=0; i<MEL_NUM_VEC; i++) {
+		for (size_t j=0; j<MEL_VEC_LENGTH; j++) {
+			(packet+PACKET_HEADER_LENGTH)[(i*MEL_VEC_LENGTH+j)*2]   = mel_vectors[i][j] >> 8;
+			(packet+PACKET_HEADER_LENGTH)[(i*MEL_VEC_LENGTH+j)*2+1] = mel_vectors[i][j] & 0xFF;
 		}
 	}
 	// Write header and tag into the packet.
@@ -66,11 +66,11 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
     uint8_t *ptr = packet + PACKET_HEADER_LENGTH;
     
 	// BE encoding of each mel coef
-    for (size_t i=0; i<N_MELVECS; i++) {
+    for (size_t i=0; i<MEL_NUM_VEC; i++) {
         const q15_t *mel_ptr = mel_vectors[i];
         
         // Unfold the loop, and hint for SIMD instructions
-        for (size_t j=0; j<MELVEC_LENGTH-1; j+=2) {
+        for (size_t j=0; j<MEL_VEC_LENGTH-1; j+=2) {
             // Load two q15_t values
             uint32_t pair = (mel_ptr[j] << 16) | (mel_ptr[j+1] & 0xFFFF);
             
@@ -81,9 +81,9 @@ static void encode_packet(uint8_t *packet, uint32_t* packet_cnt) {
             *ptr++ = pair & 0xFF;                // Second value low byte
         }
         
-        // Handle odd element if MELVEC_LENGTH is odd
-        if (MELVEC_LENGTH & 0b1) {
-            size_t j = MELVEC_LENGTH - 1;
+        // Handle odd element if MEL_VEC_LENGTH is odd
+        if (MEL_VEC_LENGTH & 0b1) {
+            size_t j = MEL_VEC_LENGTH - 1;
             *ptr++ = mel_ptr[j] >> 8;
             *ptr++ = mel_ptr[j] & 0xFF;
         }
@@ -110,7 +110,7 @@ static void send_spectrogram() {
 	// Wakup, send, and standby of the S2LP
 	S2LP_WakeUp();
 	S2LP_Send(packet, PACKET_LENGTH);
-	S2LP_Sleep();
+	S2LP_Standby();
 
 	// Print the encoded packet
 	print_encoded_packet(packet);
@@ -133,10 +133,10 @@ char threshold_mel_vectors() {
     #if THRESHOLD_MODE == 1 // Threshold on the sum of all mel vectors
 		q31_t total_sum = 0;
 		// Unrolled loop for better performance for each mel vector	
-		for (size_t i = 0; i < N_MELVECS; i++) {
+		for (size_t i = 0; i < MEL_NUM_VEC; i++) {
 			// Unrolled inner loop - process 4 elements at once
 			size_t j = 0;
-			for (; j <= MELVEC_LENGTH - 4; j += 4) {
+			for (; j <= MEL_VEC_LENGTH - 4; j += 4) {
 				// Load 4 values at once for better pipelining
 				q15_t val0 = mel_vectors[i][j];
 				q15_t val1 = mel_vectors[i][j+1];
@@ -152,7 +152,7 @@ char threshold_mel_vectors() {
 			}
 			
 			// Handle remaining elements
-			for (; j < MELVEC_LENGTH; j++) {
+			for (; j < MEL_VEC_LENGTH; j++) {
 				q15_t val = mel_vectors[i][j];
 				total_sum += (val ^ (val >> 15)) - (val >> 15); // Branchless absolute value
 			}
@@ -168,10 +168,10 @@ char threshold_mel_vectors() {
 		}
     #elif THRESHOLD_MODE == 2 // Threshold on the mean of each mel vector
 	// Unrolled loop for better performance for each mel vector	
-	for (size_t i=0; i < N_MELVECS; i++) {
+	for (size_t i=0; i < MEL_NUM_VEC; i++) {
 			q31_t sum = 0;
 			size_t j = 0;
-			for (; j < MELVEC_LENGTH - 4; j += 4) {
+			for (; j < MEL_VEC_LENGTH - 4; j += 4) {
 				q15_t val0 = mel_vectors[i][j];
 				q15_t val1 = mel_vectors[i][j+1];
 				q15_t val2 = mel_vectors[i][j+2];
@@ -184,7 +184,7 @@ char threshold_mel_vectors() {
 			}
 
 			// Handle remaining elements
-			for (; j < MELVEC_LENGTH; j++) {
+			for (; j < MEL_VEC_LENGTH; j++) {
 				q15_t val = mel_vectors[i][j];
 				sum += (val ^ (val >> 15)) - (val >> 15); // Branchless absolute value
 			}
@@ -196,10 +196,10 @@ char threshold_mel_vectors() {
 		}		
     #elif THRESHOLD_MODE == 3 // Threshold on the maximum absolute value of each mel vector
 		// Unrolled loop for better performance for each mel vector
-		for (size_t i=0; i < N_MELVECS; i++) {
+		for (size_t i=0; i < MEL_NUM_VEC; i++) {
 			q15_t max_found = 0;
 			size_t j = 0;
-			for (; j < MELVEC_LENGTH - 4; j += 4) {
+			for (; j < MEL_VEC_LENGTH - 4; j += 4) {
 				q15_t val0 = mel_vectors[i][j];
 				q15_t val1 = mel_vectors[i][j+1];
 				q15_t val2 = mel_vectors[i][j+2];
@@ -212,7 +212,7 @@ char threshold_mel_vectors() {
 				max_found |= ((val3 ^ (val3 >> 15)) - (val3 >> 15)) > corrected_threshold;
 			}
 			// Handle remaining elements
-			for (; j < MELVEC_LENGTH; j++) {
+			for (; j < MEL_VEC_LENGTH; j++) {
 				q15_t val = mel_vectors[i][j];
 				max_found |= (val ^ (val >> 15)) - (val >> 15) > corrected_threshold; // Branchless absolute value
 			}
@@ -238,7 +238,7 @@ static void ADC_Callback(int buf_cplt) {
     ADCDataRdy[buf_cplt] = 1;
     // Process a copy of the buffer, not the original
 	memcpy((void*)ADCProcessBuf, (void*)ADCData[buf_cplt], ADC_BUF_SIZE * sizeof(uint16_t));
-	Full_spectrogram_compute(ADCProcessBuf, mel_vectors);
+	Full_spectrogram_compute((q15_t*) ADCProcessBuf, mel_vectors);
     ADCDataRdy[buf_cplt] = 0;
 
     // Check if we have collected all mel vectors

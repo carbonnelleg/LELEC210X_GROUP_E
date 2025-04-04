@@ -26,6 +26,6 @@ static inline q15_t float_to_q15(float x)
 }
 
 // Compute the whole mel spectrogram using a FFT*Mel size buffer
-Full_spectrogram_compute(uint16_t *buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH]);
+void Full_spectrogram_compute(q15_t* buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH]);
 
 #endif /* INC_SPECTROGRAM_H_ */

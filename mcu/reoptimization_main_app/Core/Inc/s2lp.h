@@ -82,6 +82,7 @@ HAL_StatusTypeDef S2LP_Init(SPI_HandleTypeDef *spi_handle);
 void S2LP_IRQ_Handler(void);
 HAL_StatusTypeDef S2LP_Send(uint8_t *payload, uint16_t pay_len);
 HAL_StatusTypeDef S2LP_Sleep(void);
+HAL_StatusTypeDef S2LP_Standby(void);
 HAL_StatusTypeDef S2LP_WakeUp(void);
 
 #endif /* INC_S2LP_H_ */
