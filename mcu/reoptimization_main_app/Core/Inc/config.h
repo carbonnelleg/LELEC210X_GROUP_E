@@ -7,6 +7,9 @@
 // Debug and Feature Toggles
 // =============================================================================
 /*
+ * NO_UART          - Deactivate UART prints.
+ *                    Default: 0 (UART prints enabled).
+ * 
  * NO_DEBUG         - Deactivate debug prints.
  *                    Default: 0 (debug prints enabled).
  *
@@ -19,6 +22,9 @@
  * NO_OPTIMIZATIONS - Deactivate all optimizations.
  *                    Default: 0 (optimizations active).
  *
+ * NO_S2LP_SLEEP    - Deactivate S2LP sleep mode.
+ *                    Default: 0 (S2LP sleep mode enabled).
+ * 
  * USE_BUTTON       - Enables the use of a button (should not be needed).
  *                    Default: 0 (button support disabled).
  */
@@ -27,6 +33,7 @@
 #define NO_DEBUGPRINT    0
 #define NO_PERF          0
 #define NO_OPTIMIZATIONS 0
+#define NO_S2LP_SLEEP    1
 #define USE_BUTTON       0
 
 // =============================================================================
