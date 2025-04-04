@@ -1,5 +1,6 @@
-../Core/Src/adc_dblbuf.c:104:13:send_spectrogram	2512	static
-../Core/Src/adc_dblbuf.c:20:5:StartADCAcq	8	static
-../Core/Src/adc_dblbuf.c:121:6:threshold_mel_vectors	0	static
-../Core/Src/adc_dblbuf.c:255:6:HAL_ADC_ConvCpltCallback	8	static
-../Core/Src/adc_dblbuf.c:260:6:HAL_ADC_ConvHalfCpltCallback	8	static
+../Core/Src/adc_dblbuf.c:114:13:send_spectrogram	2512	static
+../Core/Src/adc_dblbuf.c:20:6:StopADCAcq	8	static
+../Core/Src/adc_dblbuf.c:31:5:StartADCAcq	16	static
+../Core/Src/adc_dblbuf.c:136:6:threshold_mel_vectors	0	static
+../Core/Src/adc_dblbuf.c:282:6:HAL_ADC_ConvCpltCallback	16	static
+../Core/Src/adc_dblbuf.c:287:6:HAL_ADC_ConvHalfCpltCallback	16	static

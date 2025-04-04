@@ -10,6 +10,7 @@
 
 
 int StartADCAcq(void);
+void StopADCAcq(void);
 
 extern ADC_HandleTypeDef hadc1;
 

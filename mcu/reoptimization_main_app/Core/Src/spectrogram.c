@@ -71,7 +71,7 @@ void step1_123_batch_pre_process(q15_t *buffer)
 // Step 3 : Compute the complex magnitude of the FFT
 void step3_approximate_magnitude(q15_t *fft_buffer, q15_t *output_buffer)
 {
-	for (int i = 0; i < SAMPLES_NUM/2; i++)
+	for (int i = 0; i < SAMPLES_NUM; i++)
 	{
 		// Approximate the magnitude using the maximum value
 		// Get real and imaginary parts
@@ -103,7 +103,7 @@ void step3_approximate_magnitude(q15_t *fft_buffer, q15_t *output_buffer)
 // The function computes the FFT of each vector in the buffer, and then computes the complex magnitude of each FFT.
 void step23_batch_fft(q15_t *buffer)
 {
-	q15_t fft_buffer[SAMPLES_NUM];
+	q15_t fft_buffer[SAMPLES_NUM*2];
 	// 2.1 : Compute each FFT of size SAMPLES_NUM
 	for (int i = 0; i < MEL_NUM_VEC; i++){ // TODO : Unroll this loop
 		// Compute the FFT of each vector in the buffer
@@ -122,7 +122,7 @@ void step4_mel_filter_apply(q15_t *buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_VE
 {
 	// 4.1 : Compute the mel vectors of each FFT (parallel processing)
 	for (int i = 0; i < MEL_NUM_VEC; i++){ // TODO : Unroll this loop
-		mel_filter_apply(&buffer[i*SAMPLES_NUM], &mel_vectors[i][0], SAMPLES_NUM, MEL_VEC_LENGTH);
+		mel_filter_apply(&buffer[i*SAMPLES_NUM], &mel_vectors[i][0], SAMPLES_NUM/2, MEL_VEC_LENGTH);
 	}
 }
 
@@ -139,8 +139,12 @@ void Full_spectrogram_compute(q15_t* buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_
 	// 1   : Format the signal (expand to 16-bit, remove DC, windowing)
 	step1_123_batch_pre_process(buffer);
 
+	DEBUG_PRINT("Spectrogram pre-processing done\r\n");
+
 	// 2 & 3 : Compute each FFT of size SAMPLES_NUM and take the absolute value
 	step23_batch_fft(buffer);
+
+	DEBUG_PRINT("Spectrogram FFT done\r\n");
 
 	// 4   : Compute the mel vectors of each FFT (parallel processing)
 	step4_mel_filter_apply(buffer, mel_vectors);

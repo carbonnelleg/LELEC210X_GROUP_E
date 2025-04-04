@@ -16,19 +16,29 @@ static q15_t mel_vectors[MEL_NUM_VEC][MEL_VEC_LENGTH];
 
 static uint32_t packet_cnt = 0;
 
+// Function to stop the ADC acquisition
+void StopADCAcq() {
+	HAL_ADC_Stop_DMA(&hadc1);
+
+	// Cleanup the ADC buffer
+	memset(ADCDoubleBuf, 0, sizeof(ADCDoubleBuf));
+	// Reset the ADC data ready flags
+	ADCDataRdy[0] = 0;
+	ADCDataRdy[1] = 0;
+}
+
 // Function to start the ADC acquisition
 int StartADCAcq() {
+	// Stop the ADC if it is already running
+	StopADCAcq();
+
+	// Start the ADC in DMA mode
 	int ret = HAL_ADC_Start_DMA(&hadc1, (uint32_t *)ADCDoubleBuf, 2*ADC_BUF_SIZE);
 
 	// Put the MCU to sleep until the ADC buffer is full
 	HAL_PWR_EnterSLEEPMode(PWR_MAINREGULATOR_ON, PWR_SLEEPENTRY_WFI);
 
 	return ret;
-}
-
-// Function to stop the ADC acquisition
-static void StopADCAcq() {
-	HAL_ADC_Stop_DMA(&hadc1);
 }
 
 // Function to print the encoded packet in hexadecimal format
@@ -108,9 +118,14 @@ static void send_spectrogram() {
 	encode_packet(packet, &packet_cnt);
 
 	// Wakup, send, and standby of the S2LP
-	S2LP_WakeUp();
+	#if (NO_S2LP_SLEEP == 0)
+		S2LP_WakeUp();
+	#endif
 	S2LP_Send(packet, PACKET_LENGTH);
-	S2LP_Standby();
+	// Wait for the transmission to finish
+	#if (NO_S2LP_SLEEP == 0)
+		S2LP_Standby();
+	#endif
 
 	// Print the encoded packet
 	print_encoded_packet(packet);
@@ -228,6 +243,8 @@ char threshold_mel_vectors() {
 
 // Callback function for the ADC, it is called when one of the two buffers is full
 static void ADC_Callback(int buf_cplt) {
+	DEBUG_PRINT("ADC buffer %d filled\r\n", buf_cplt);
+
     // Check if ADC buffer is ready
     if (ADCDataRdy[1-buf_cplt]) {
         DEBUG_PRINT("Error: ADC Data buffer full\r\n");
@@ -241,6 +258,8 @@ static void ADC_Callback(int buf_cplt) {
 	Full_spectrogram_compute((q15_t*) ADCProcessBuf, mel_vectors);
     ADCDataRdy[buf_cplt] = 0;
 
+	DEBUG_PRINT("ADC buffer %d processed\r\n", buf_cplt);
+
     // Check if we have collected all mel vectors
 	#if THRESHOLD_MODE > 0
 		// If the threshold is reached, print and send the spectrogram
@@ -250,6 +269,14 @@ static void ADC_Callback(int buf_cplt) {
 
 	// If we have collected all mel vectors, print and send the spectrogram
 	send_spectrogram();
+
+	#if (USE_BUTTON == 1)
+		// If the button is pressed, stop the ADC acquisition
+		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
+			StopADCAcq();
+			DEBUG_PRINT("ADC acquisition stopped\r\n");
+		}
+	#endif
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)

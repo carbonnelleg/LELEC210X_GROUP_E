@@ -27,7 +27,7 @@
 #define NO_DEBUGPRINT    0
 #define NO_PERF          0
 #define NO_OPTIMIZATIONS 0
-#define USE_BUTTON       0
+#define USE_BUTTON       1
 
 // =============================================================================
 // Optimization Defines
@@ -121,9 +121,9 @@
  * AMPL_ABS_OUTPUTS    - Use absolute value processing on outputs.
  *                       Default: 0 (disabled).
  */
-#define AMPL_APPROX         0
-#define AMPL_ABS_INPUTS     0
-#define AMPL_MAX_SUM_INPUTS 1
+#define AMPL_APPROX         1
+#define AMPL_ABS_INPUTS     1
+#define AMPL_MAX_SUM_INPUTS 0
 #define AMPL_ABS_OUTPUTS    0
 
 // =============================================================================

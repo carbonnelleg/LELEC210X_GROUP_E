@@ -87,8 +87,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 static void acquire_and_send_packet() {
 	if (StartADCAcq() != HAL_OK) {
 		DEBUG_PRINT("Error while enabling the DMA\r\n");
-	}
-	__WFI();
+	} else {
+    DEBUG_PRINT("ADC acquisition started\r\n");
+  }
+
+	while ((HAL_ADC_GetState(&hadc1) & HAL_ADC_STATE_REG_BUSY) != 0UL) {
+    // Wait for the ADC to be ready
+    __WFI();
+  }
 }
 
 void run(void)
@@ -97,8 +103,13 @@ void run(void)
 
   // Initialize the S2LP to the sleep mode if configured
   #if NO_S2LP_SLEEP == 0
-    S2LP_Standby();
+    int s2lp_Check = S2LP_Standby();
+    if (s2lp_Check != HAL_OK) {
+      DEBUG_PRINT("[S2LP] Error while putting the S2LP to sleep: %d\r\n", s2lp_Check);
+      Error_Handler();
+    }
   #endif
+  
 
 	while (1)
 	{
@@ -119,6 +130,16 @@ void run(void)
       while (!btn_press) {
         acquire_and_send_packet();
       }
+      // Stop the acquisition
+      StopADCAcq();
+      // Wait for the button to be released
+      while (btn_press) {
+        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
+        HAL_Delay(100);
+        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
+        HAL_Delay(100);
+      }
+      // Reset the button press flag
       btn_press = 0;
     #endif
 	}
@@ -162,7 +183,7 @@ int main(void)
   MX_AES_Init();
   /* USER CODE BEGIN 2 */
 
-  if (NO_UART == 1) {
+  if (NO_UART == 0) {
 	  MX_LPUART1_UART_Init();
   }
 
