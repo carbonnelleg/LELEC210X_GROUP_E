@@ -27,7 +27,7 @@
 #define NO_DEBUGPRINT    0
 #define NO_PERF          0
 #define NO_OPTIMIZATIONS 0
-#define USE_BUTTON       1
+#define USE_BUTTON       0
 
 // =============================================================================
 // Optimization Defines

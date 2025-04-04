@@ -272,10 +272,8 @@ static void ADC_Callback(int buf_cplt) {
 
 	#if (USE_BUTTON == 1)
 		// If the button is pressed, stop the ADC acquisition
-		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0) == GPIO_PIN_SET) {
-			StopADCAcq();
-			DEBUG_PRINT("ADC acquisition stopped\r\n");
-		}
+		StopADCAcq();
+		DEBUG_PRINT("ADC acquisition stopped\r\n");
 	#endif
 }
 

@@ -132,13 +132,6 @@ void run(void)
       }
       // Stop the acquisition
       StopADCAcq();
-      // Wait for the button to be released
-      while (btn_press) {
-        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-        HAL_Delay(100);
-        HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
-        HAL_Delay(100);
-      }
       // Reset the button press flag
       btn_press = 0;
     #endif
