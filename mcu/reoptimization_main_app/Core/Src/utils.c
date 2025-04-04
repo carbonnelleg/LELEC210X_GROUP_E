@@ -5,7 +5,7 @@
 #include "stm32l4xx_hal.h"
 #include "main.h"
 
-#if (PERF_COUNT == 1)
+#if (NO_PERF == 0)
 
 volatile uint8_t counting_cycles = 0;
 

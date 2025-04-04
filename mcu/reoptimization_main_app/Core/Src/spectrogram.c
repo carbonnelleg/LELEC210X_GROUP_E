@@ -136,16 +136,16 @@ void Full_spectrogram_compute(q15_t* buffer, q15_t mel_vectors[MEL_NUM_VEC][MEL_
 
 	// This function takes in a buffer of MEL_NUM_VEC * SAMPLES_NUM, and outputs the mel vectors in mel_vectors.
 
+	start_cycle_count();
+
 	// 1   : Format the signal (expand to 16-bit, remove DC, windowing)
 	step1_123_batch_pre_process(buffer);
-
-	DEBUG_PRINT("Spectrogram pre-processing done\r\n");
 
 	// 2 & 3 : Compute each FFT of size SAMPLES_NUM and take the absolute value
 	step23_batch_fft(buffer);
 
-	DEBUG_PRINT("Spectrogram FFT done\r\n");
-
 	// 4   : Compute the mel vectors of each FFT (parallel processing)
 	step4_mel_filter_apply(buffer, mel_vectors);
+
+	stop_cycle_count("Spectrogram compute");
 }
