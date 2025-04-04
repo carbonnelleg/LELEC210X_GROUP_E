@@ -14,5 +14,5 @@
 ../Core/Src/s2lp.c:424:19:S2LP_Sleep	16	static
 ../Core/Src/s2lp.c:440:19:S2LP_Standby	16	static
 ../Core/Src/s2lp.c:456:19:S2LP_WakeUp	16	static
-../Core/Src/s2lp.c:472:19:S2LP_Init	32	static,ignoring_inline_asm
-../Core/Src/s2lp.c:523:6:S2LP_IRQ_Handler	16	static
+../Core/Src/s2lp.c:478:19:S2LP_Init	32	static,ignoring_inline_asm
+../Core/Src/s2lp.c:529:6:S2LP_IRQ_Handler	16	static

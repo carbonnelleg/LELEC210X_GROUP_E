@@ -458,12 +458,18 @@ HAL_StatusTypeDef S2LP_WakeUp(void)
 	S2LPStatus radio_status;
 	HAL_StatusTypeDef err = S2LP_ReadReg(0, NULL, &radio_status); // fetch radio state
 
-	while (radio_status.MC_STATE != MC_STATE_READY) {
-		err = S2LP_Command(CMD_READY, &radio_status);
-		if (err) {
-			DEBUG_PRINT("[S2LP] Error: cannot enter ready mode\r\n");
-			return HAL_ERROR;
-		}
+	// Flush the Tx FIFO
+	S2LP_Command(CMD_FLUSHTXFIFO, &radio_status);
+
+	// Ensure the radio is in READY mode before trying to lock for Tx
+	uint32_t ready_timeout = 100000;
+	while (radio_status.MC_STATE != MC_STATE_READY && ready_timeout--) {
+		S2LP_Command(CMD_READY, &radio_status);
+		HAL_Delay(1);
+	}
+	if (radio_status.MC_STATE != MC_STATE_READY) {
+		DEBUG_PRINT("[S2LP] Error: radio did not become READY, state: 0x%X\r\n", radio_status.MC_STATE);
+		return HAL_BUSY;
 	}
 
 	return HAL_OK;

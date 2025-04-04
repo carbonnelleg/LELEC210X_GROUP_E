@@ -31,9 +31,10 @@
 #define NO_UART          0
 #define NO_DEBUG         0
 #define NO_DEBUGPRINT    0
+#define NO_DEBUGFAST_P   0
 #define NO_PERF          0
 #define NO_OPTIMIZATIONS 0
-#define NO_S2LP_SLEEP    1
+#define NO_S2LP_SLEEP    0
 #define USE_BUTTON       0
 
 // =============================================================================
@@ -188,15 +189,19 @@
 #if NO_UART == 1
     #undef NO_DEBUG
     #undef NO_DEBUGPRINT
+    #undef NO_DEBUGFAST_P
     #define NO_DEBUG      1
     #define NO_DEBUGPRINT 1
+    #define NO_DEBUGFAST_P 1
 #endif
 
 // Deactivate all prints and performance metrics with the NO_DEBUG flag
 #if NO_DEBUG == 1
     #undef NO_DEBUGPRINT
+    #undef NO_DEBUGFAST_P
     #undef NO_PERF
     #define NO_DEBUGPRINT 1
+    #define NO_DEBUGFAST_P 1
     #define NO_PERF       1
 #endif
 
@@ -205,6 +210,13 @@
     #define DEBUG_PRINT(...) do{ printf(__VA_ARGS__ ); } while( 0 )
 #else
     #define DEBUG_PRINT(...) do{ } while ( 0 )
+#endif
+
+// Fast Debug print macro
+#if (NO_DEBUGFAST_P == 0)
+    #define DEBUG_PRINT_FAST(data, size) do{ HAL_UART_Transmit(&hlpuart1, (uint8_t*)data, size, HAL_MAX_DELAY); } while( 0 )
+#else
+    #define DEBUG_PRINT_FAST(...) do{ } while ( 0 )
 #endif
 
 // Deactivate performance metrics with the NO_PERF flag
