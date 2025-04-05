@@ -14,6 +14,7 @@ from PyQt6.QtCore import Qt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import matplotlib.style as mplstyle
+import plotly.graph_objects as go  # New import for Plotly
 
 close_all = False
 
@@ -265,10 +266,14 @@ class PlotWindow(QMainWindow):
         reset_btn.clicked.connect(self.reset_view)
         save_btn = QPushButton("Save Plot")
         save_btn.clicked.connect(self.save_plot)
+        # New Interactive Plot button:
+        interactive_btn = QPushButton("Interactive Plot")
+        interactive_btn.clicked.connect(self.show_interactive_plot)
         close_btn = QPushButton("Close All")
         close_btn.clicked.connect(self.close_all)
         button_layout.addWidget(reset_btn)
         button_layout.addWidget(save_btn)
+        button_layout.addWidget(interactive_btn)
         button_layout.addWidget(close_btn)
         layout.addLayout(button_layout)
 
@@ -299,6 +304,24 @@ class PlotWindow(QMainWindow):
         self.fig.savefig(save_dir / f"{name}.png", dpi=300, bbox_inches='tight')
         self.fig.savefig(save_dir / f"{name}.pdf", bbox_inches='tight')
         print(f"Plot saved to {save_dir}/{name}")
+
+    def show_interactive_plot(self):
+        # Get current slider values
+        start = self.start_slider.value()
+        end = self.end_slider.value()
+        if start >= end:
+            return
+        # Trim the data based on the slider positions
+        t = self.centered_time[start:end] - self.centered_time[start]
+        p = self.power[start:end]
+        # Create a Plotly figure with the trimmed data
+        fig = go.Figure(data=go.Scatter(x=t, y=p, mode='lines'))
+        fig.update_layout(
+            title="Interactive Power Plot",
+            xaxis_title="Time (s)",
+            yaxis_title="Power (mW)"
+        )
+        fig.show()
 
     def close_all(self):
         global close_all
