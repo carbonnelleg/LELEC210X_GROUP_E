@@ -227,7 +227,7 @@ class PlotWindow(QMainWindow):
             f"{self.total_energy:.2f} mJ",
             transform=self.ax.transAxes,
             ha='right', va='top', fontsize=12,
-            bbox=dict(facecolor='white', alpha=0.6)
+            bbox=dict(facecolor='white', alpha=0.8)
         )
         self.ax.set_xlabel("Time (s)", fontsize=14)
         self.ax.set_ylabel("Power (mW)", fontsize=14)
