@@ -1,3 +1,6 @@
-../Core/Src/spectrogram.c:85:6:mel_filter_apply	88	static
-../Core/Src/spectrogram.c:183:6:Spectrogram_Format	4	static,ignoring_inline_asm
-../Core/Src/spectrogram.c:226:6:Spectrogram_Compute	96	static
+../Core/Src/spectrogram.c:17:6:mel_filter_apply	88	static
+../Core/Src/spectrogram.c:58:6:step1_123_batch_pre_process	16	static
+../Core/Src/spectrogram.c:72:6:step3_approximate_magnitude	4	static
+../Core/Src/spectrogram.c:104:6:step23_batch_fft	2088	static
+../Core/Src/spectrogram.c:121:6:step4_mel_filter_apply	80	static
+../Core/Src/spectrogram.c:129:6:Full_spectrogram_compute	24	static
