@@ -72,7 +72,7 @@ def validate_payload(payload: Dict[str, Any]) -> None:
     except Exception as e:
         raise ValueError("Field 'current_packet_data' is not valid base64 data.") from e
 
-async def send_packet(payload: Dict[str, Any], url: str = "http://127.0.0.1:8080/update") -> None:
+async def send_packet(payload: Dict[str, Any], url: str = "http://127.0.0.1:8090/update") -> None:
     """
     Validate the payload and send it as a JSON POST to the given URL.
 

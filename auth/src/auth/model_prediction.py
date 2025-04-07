@@ -12,6 +12,11 @@ def decision_maxlikelihood(probs):
     prod_probs = np.prod(probs, axis=0)
     return classnames[np.argmax(prod_probs)]
 
+def decision_weighted(probs):
+    """Règle du vote pondéré : Choisir la classe avec la somme maximale des probabilités."""
+    sum_probs = np.sum(probs, axis=0)
+    return classnames[np.argmax(sum_probs)]
+
 
 import numpy as np
 import pickle
@@ -20,35 +25,26 @@ from tensorflow.keras.models import load_model
 root = os.path.dirname(os.path.abspath(__file__))
 
 def old_model_prediction(payload):
-    classnames = ['chainsaw', 'fire', 'fireworks', 'gun']
     this_fv = np.frombuffer(payload, dtype=np.uint16)
     
     ocsvm_filename = root + "/ocsvm_model.pkl"
     cnn_filename = root + "/CNN_model.keras"
     
-    # Charger les modèles
     ocsvm_model = pickle.load(open(ocsvm_filename, "rb"))
     cnn_model = load_model(cnn_filename)
     
-    # Normalisation du vecteur de caractéristiques
     my_little_norm = np.linalg.norm(this_fv)
     this_fv = this_fv / my_little_norm
     
-    # Prédiction avec OCSVM
     ocsvm_prediction = ocsvm_model.predict([this_fv])
-    if ocsvm_prediction[0] == 1:
-        return None
+    # if ocsvm_prediction[0] == -1:
+    #     return None, None
     
-    new_shape = (20, 20, 1)
-    demo_fv = this_fv.reshape(new_shape)
-    
-    # Prédiction avec le CNN
-    prediction = cnn_model.predict(demo_fv)
-    
-    # Obtenir la classe avec la probabilité la plus élevée
-    predicted_class = classnames[np.argmax(prediction)]
-    
-    return predicted_class
+    demo_fv = this_fv.reshape((1, 20, 20, 1))
+    prediction = cnn_model.predict(demo_fv.T)
+
+    return prediction, this_fv
+
 
 
 old_predictions = []

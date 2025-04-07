@@ -2,6 +2,7 @@ import os
 from collections.abc import Iterator
 from typing import Optional
 
+import requests
 import click
 import serial
 import zmq
@@ -28,6 +29,21 @@ remote_hostname = "http://lelec210x.sipr.ucl.ac.be"
 remote_key = "pKRQWoIQTgQ9YLfKFlESrQJ3cHk2ZKnNi1yltxQu"
 
 REMOTE = True
+
+
+
+import time
+
+# History of (timestamp, prediction_vector)
+proba_memory = []
+CLASSNAMES = ['chainsaw', 'fire', 'fireworks', 'gun']
+MEMORY_DURATION = 6  # seconds
+
+
+# Classnames used for final decision
+classnames = ['chainsaw', 'fire', 'fireworks', 'gun']
+
+
 
 
 def parse_packet(line: str) -> bytes:
@@ -115,6 +131,7 @@ def main(
     """
     Parse packets from the MCU and perform authentication.
     """
+    global proba_memory
     logger.debug(f"Unwrapping packets with auth. key: {auth_key.hex()}")
 
     how_to_kill = (
@@ -123,7 +140,7 @@ def main(
     )
 
     unwrapper = packet.PacketUnwrapper(
-        key=auth_key,
+        key=16 * b"\00",
         allowed_senders=[0],
         authenticate=authenticate,
     )
@@ -183,7 +200,35 @@ def main(
             sender, payload = unwrapper.unwrap_packet(msg)
             logger.debug(f"From {sender}, received packet: {payload.hex()}")
 
-            myClass, this_fv, prediction = mp.model_prediction(payload)
+            # Predict only probability and feature vector
+            prediction, this_fv = mp.old_model_prediction(payload)
+            
+
+            # Skip if anomaly detected
+            if prediction is None:
+                logger.info("OCSVM rejected sample (anomaly)")
+                continue
+             
+            
+            # Get current time
+            now = time.time()
+
+            # Flatten the prediction vector (shape: (1, 4) → (4,))
+            flat_prediction = prediction.flatten()
+
+            # Add to memory with timestamp
+            proba_memory.append((now, flat_prediction))
+
+            # Remove entries older than 6 seconds
+            proba_memory = [(t, p) for (t, p) in proba_memory if now - t <= MEMORY_DURATION]
+            
+            if len(proba_memory) >= 1 and np.max(this_fv) > 0.0:
+                probs_only = [p for (_, p) in proba_memory]
+                myClass = mp.decision_weighted(probs_only)
+            else:
+                myClass = None
+
+
             if REMOTE:
                 hostname = remote_hostname
                 key = remote_key
@@ -196,24 +241,22 @@ def main(
                 # Note: custom_gui2_interface.send_packet expects current_packet_data as a base64 string.
                 gui_data = {
                     "current_class_names": ["chainsaw", "fire", "fireworks", "gun"],
-                    "current_class_probas": prediction,
-                    "current_feature_vector": this_fv,
+                    "current_class_probas": prediction[0].tolist(),
+                    "current_feature_vector": this_fv.reshape(n_melvecs, melvec_length).tolist(),
                     # Convert raw packet bytes into a base64-encoded string.
                     "current_packet_data": base64.b64encode(payload).decode('utf-8'),
-                    "current_choice": myClass,
+                    "current_choice": myClass if myClass is not None else "unknown",
                     "mel_spec_len": melvec_length,
                     "mel_spec_num": n_melvecs,
                 }
                 # Schedule the asynchronous send_packet task using the current event loop.
-                asyncio.get_event_loop().create_task(
-                    custom_gui2_interface.send_packet(gui_data)
-                )
+                asyncio.run(custom_gui2_interface.send_packet(gui_data))
                 logger.debug("Sent GUI update via custom_gui2_interface.")
 
             # Checking the threshold and submitting results.
             if myClass is not None:
-                submit(myClass, url=hostname, key=key)
-                output.write(f'my class is {myClass}\n')
+                response = requests.post(f'{hostname}/lelec210x/leaderboard/submit/{key}/{myClass}', timeout=1)
+                output.write(f'my class is {myClass} (based on {len(proba_memory)} probas)\n')
             output.flush()
 
         except packet.InvalidPacket as e:

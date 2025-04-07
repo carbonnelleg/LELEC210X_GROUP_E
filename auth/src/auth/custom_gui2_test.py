@@ -11,7 +11,7 @@ MEL_SPEC_NUM = 20
 MEL_SPEC_LEN = 20
 
 async def send_packets():
-    url = "http://127.0.0.1:8080/update"
+    url = "http://127.0.0.1:8090/update"
     packet_counter = 0
     last_time = time.time()
     async with aiohttp.ClientSession() as session:

@@ -314,9 +314,9 @@ async def start_server():
     app_server.add_routes([web.post('/update', handle_update)])
     runner = web.AppRunner(app_server)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    site = web.TCPSite(runner, '0.0.0.0', 8090)
     await site.start()
-    print("Async server started at http://0.0.0.0:8080")
+    print("Async server started at http://0.0.0.0:8090")
     # Keep the server running indefinitely.
     while True:
         await asyncio.sleep(3600)
