@@ -61,8 +61,8 @@ all:
 main-build: optimization_main_app.elf secondary-outputs
 
 # Tool invocations
-optimization_main_app.elf optimization_main_app.map: $(OBJS) $(USER_OBJS) C:\Dev\GIT\LELEC210X_GROUP_E\mcu\optimization_main_app\STM32L4A6ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "optimization_main_app.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Dev\GIT\LELEC210X_GROUP_E\mcu\optimization_main_app\STM32L4A6ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="optimization_main_app.map" -Wl,--gc-sections -static -L"C:\Dev\GIT\LELEC210X_GROUP_E\mcu\optimization_main_app\ARM_CMSIS\CMSIS\DSP\Lib\GCC" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+optimization_main_app.elf optimization_main_app.map: $(OBJS) $(USER_OBJS) C:\Users\gauti\OneDrive\ -\ UCL\Documents\UCL\ -\ EPL\Master\Master\ 1\ Q2\LELEC210X\LELEC210X_GROUP_E\mcu\optimization_main_app\STM32L4A6ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "optimization_main_app.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\gauti\OneDrive - UCL\Documents\UCL - EPL\Master\Master 1 Q2\LELEC210X\LELEC210X_GROUP_E\mcu\optimization_main_app\STM32L4A6ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="optimization_main_app.map" -Wl,--gc-sections -static -L"C:\Users\gauti\OneDrive - UCL\Documents\UCL - EPL\Master\Master 1 Q2\LELEC210X\LELEC210X_GROUP_E\mcu\optimization_main_app\ARM_CMSIS\CMSIS\DSP\Lib\GCC" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
