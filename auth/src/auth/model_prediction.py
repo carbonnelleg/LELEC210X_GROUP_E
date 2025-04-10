@@ -41,9 +41,9 @@ def old_model_prediction(payload):
     #     return None, None
     
     demo_fv = this_fv.reshape((1, 20, 20, 1))
-    prediction = cnn_model.predict(demo_fv.T)
+    prediction = cnn_model.predict(demo_fv)
 
-    return prediction, this_fv
+    return prediction, this_fv, demo_fv.squeeze(axis=(0, 3))
 
 
 

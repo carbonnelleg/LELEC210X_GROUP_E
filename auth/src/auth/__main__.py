@@ -201,7 +201,7 @@ def main(
             logger.debug(f"From {sender}, received packet: {payload.hex()}")
 
             # Predict only probability and feature vector
-            prediction, this_fv = mp.old_model_prediction(payload)
+            prediction, this_fv, my_spectro = mp.old_model_prediction(payload)
             
 
             # Skip if anomaly detected
@@ -242,7 +242,7 @@ def main(
                 gui_data = {
                     "current_class_names": ["chainsaw", "fire", "fireworks", "gun"],
                     "current_class_probas": prediction[0].tolist(),
-                    "current_feature_vector": this_fv.reshape(n_melvecs, melvec_length).tolist(),
+                    "current_feature_vector": my_spectro.tolist(),
                     # Convert raw packet bytes into a base64-encoded string.
                     "current_packet_data": base64.b64encode(payload).decode('utf-8'),
                     "current_choice": myClass if myClass is not None else "unknown",
