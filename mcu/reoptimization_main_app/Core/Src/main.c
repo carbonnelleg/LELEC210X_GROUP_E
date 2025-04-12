@@ -84,19 +84,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		S2LP_IRQ_Handler();
 }
 
-static void acquire_and_send_packet() {
-	if (StartADCAcq() != HAL_OK) {
-		DEBUG_PRINT("Error while enabling the DMA\r\n");
-	} else {
-    DEBUG_PRINT("ADC acquisition started\r\n");
-  }
-
-	while ((HAL_ADC_GetState(&hadc1) & HAL_ADC_STATE_REG_BUSY) != 0UL) {
-    // Wait for the ADC to be ready
-    __WFI();
-  }
-}
-
 void run(void)
 {
 	btn_press = 0;
@@ -109,14 +96,24 @@ void run(void)
       Error_Handler();
     }
   #endif
-  
+
 
 	while (1)
 	{
     // If NO_BUTTON is set, we acquire and send the packet directly and continuously
     // Otherwise, we wait for the button press to acquire and send the packet
     #if USE_BUTTON == 0
-      acquire_and_send_packet();
+      // Start the ADC acquisition
+      if (StartADCAcq() != HAL_OK) {
+        DEBUG_PRINT("Error while starting the ADC acquisition\r\n");
+        Error_Handler();
+      }
+      // Continuous acquisition
+      while (1) {
+        ProcessADCData();
+        HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
+        __WFI();
+      }
     #else
       // Wait for the button press
       while (!btn_press) {
@@ -125,10 +122,16 @@ void run(void)
         HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
         HAL_Delay(200);
       }
+      // Start the ADC acquisition
+      if (StartADCAcq() != HAL_OK) {
+        DEBUG_PRINT("Error while starting the ADC acquisition\r\n");
+        Error_Handler();
+      }
       btn_press = 0;
       // Continuous acquisition while the button is not pressed
       while (!btn_press) {
-        acquire_and_send_packet();
+        ProcessADCData();
+        HAL_PWR_EnterSLEEPMode(PWR_LOWPOWERREGULATOR_ON, PWR_SLEEPENTRY_WFI);
       }
       // Stop the acquisition
       StopADCAcq();
@@ -235,7 +238,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_5;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_11;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -251,7 +254,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }

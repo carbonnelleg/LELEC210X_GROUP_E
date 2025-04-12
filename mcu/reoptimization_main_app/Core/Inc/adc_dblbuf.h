@@ -8,9 +8,9 @@
 // ADC parameters
 #define ADC_BUF_SIZE SAMPLES_NUM*MEL_NUM_VEC
 
-
 int StartADCAcq(void);
 void StopADCAcq(void);
+void ProcessADCData(void);
 
 extern ADC_HandleTypeDef hadc1;
 

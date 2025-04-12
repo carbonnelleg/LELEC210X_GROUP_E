@@ -28,7 +28,7 @@
  * USE_BUTTON       - Enables the use of a button (should not be needed).
  *                    Default: 0 (button support disabled).
  */
-#define NO_UART          1
+#define NO_UART          0
 #define NO_DEBUG         0
 #define NO_DEBUGPRINT    0
 #define NO_DEBUGFAST_P   0
