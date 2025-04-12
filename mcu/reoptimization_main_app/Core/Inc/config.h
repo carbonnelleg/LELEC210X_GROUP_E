@@ -28,7 +28,7 @@
  * USE_BUTTON       - Enables the use of a button (should not be needed).
  *                    Default: 0 (button support disabled).
  */
-#define NO_UART          0
+#define NO_UART          1
 #define NO_DEBUG         0
 #define NO_DEBUGPRINT    0
 #define NO_DEBUGFAST_P   0
@@ -98,18 +98,18 @@
  *                        Default: 0 (deactivated).
  *
  * THRESHOLD_LV1_VALUE  - Threshold level 1 value.
- *                        Default: 100.
+ *                        Default: 5.
  *
  * THRESHOLD_LV2_VALUE  - Threshold level 2 value.
- *                        Default: 200.
+ *                        Default: 10.
  *
  * THRESHOLD_LV3_VALUE  - Threshold level 3 value.
- *                        Default: 300.
+ *                        Default: 20.
  */
 #define THRESHOLD_MODE       0
-#define THRESHOLD_LV1_VALUE  100
-#define THRESHOLD_LV2_VALUE  200
-#define THRESHOLD_LV3_VALUE  300
+#define THRESHOLD_LV1_VALUE  5
+#define THRESHOLD_LV2_VALUE  10
+#define THRESHOLD_LV3_VALUE  20
 
 // =============================================================================
 // Approximate Amplitude Defines
