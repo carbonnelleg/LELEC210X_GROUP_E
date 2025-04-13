@@ -95,7 +95,7 @@ class CustomGUI(QMainWindow):
         self.fv_plot_widget.setInteractive(False)
         self.fv_img_item = pg.ImageItem()
         self.fv_plot_widget.addItem(self.fv_img_item)
-        self.fv_plot_widget.invertY(True)
+        #self.fv_img_item.setLevels([0, 2**16]) # HACK : Check if the fv was not normalized before
         top_splitter.addWidget(self.fv_plot_widget)
 
         #### Bottom Row: Two Panels (Left: WebView, Right: Packet & Metrics)

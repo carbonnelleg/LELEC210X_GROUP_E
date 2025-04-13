@@ -304,6 +304,7 @@ class PlotWindow(QMainWindow):
         self.fig.savefig(save_dir / f"{name}.png", dpi=300, bbox_inches='tight')
         self.fig.savefig(save_dir / f"{name}.pdf", bbox_inches='tight')
         print(f"Plot saved to {save_dir}/{name}")
+        print(f"Mean Power: {np.mean(self.power[self.start_slider.value():self.end_slider.value()])} mW")
 
     def show_interactive_plot(self):
         # Get current slider values
