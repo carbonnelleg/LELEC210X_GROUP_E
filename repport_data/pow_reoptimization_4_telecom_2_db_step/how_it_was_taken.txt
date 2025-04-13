@@ -1,0 +1,4 @@
+Take the index :
+--> Power level = -2 * <file number>
+
+Up until -30dBm -> then jumps of -10 dBm
