@@ -84,6 +84,51 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		S2LP_IRQ_Handler();
 }
 
+uint32_t analogRead_LowPower(void)
+{
+    // Turn on ADC2
+    HAL_ADC_Start(&hadc2);
+
+    // Wait for it to be ready (if you have AutoOff enabled)
+    HAL_ADC_PollForConversion(&hadc2, HAL_MAX_DELAY);
+
+    uint32_t value = HAL_ADC_GetValue(&hadc2);
+
+    // Turn off ADC2 (optional if AutoOff is enabled)
+    HAL_ADC_Stop(&hadc2);
+
+    return value;
+}
+
+uint8_t analogRead_CapaLvl(void)
+{
+  // Max value is 4.5V, min is 3.6V
+  // ADC is 6 bit -> 0-63
+  // Vdd can be 3.3V to 1.8V
+  // The 4.5V max goes through a voltage divider to 1.72V (safe for 1.8V)
+  // 4.5V -> 1.72V -> 60 ; 3.6V -> 1.35V -> 48
+
+  uint8_t value = (uint8_t)analogRead_LowPower();
+
+  // CAPAC_LVL_X are the percentage of the battery level
+  // True value = value * 12 + 48
+  // 0% = 48 ; 100% = 60
+
+  // If the capacitor is lower than 48, then the MCU is at 3.3V supply
+  if (20 < value < 28) {
+    return 3; // Full-Charge, as supplied by USB or 3.3V supply
+  }
+
+  // Give a level depending on the threshold reached
+  if (value < (CAPA_LVL_1*12 + 48)) {
+    return 0; // Low
+  } else if (value < (CAPA_LVL_2*12 + 48)) {
+    return 1; // Medium
+  } else {
+    return 2; // Full
+  }
+}
+
 void run(void)
 {
 	btn_press = 0;
@@ -97,6 +142,10 @@ void run(void)
     }
   #endif
 
+  //while (1) {
+  //  HAL_Delay(100);
+  //  DEBUG_PRINT("Battery Level: %d\r\n", analogRead_CapaLvl());
+  //}
 
 	while (1)
 	{
@@ -177,6 +226,7 @@ int main(void)
   MX_TIM3_Init();
   MX_ADC1_Init();
   MX_AES_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
   if (NO_UART == 0) {

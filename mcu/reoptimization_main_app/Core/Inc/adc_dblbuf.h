@@ -11,6 +11,7 @@
 int StartADCAcq(void);
 void StopADCAcq(void);
 void ProcessADCData(void);
+uint8_t analogRead_CapaLvl(void); // Implemented in main (BAD PRACTICE)
 
 extern ADC_HandleTypeDef hadc1;
 

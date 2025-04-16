@@ -249,6 +249,23 @@ void ProcessADCData() {
 			return;
 		}
 
+		#if OPT_S2LP_DYN_POWER_ON
+			uint8_t capa_lvl = analogRead_CapaLvl();
+			if (capa_lvl == 0) {
+				// Low power, skip sending
+				DEBUG_PRINT("Low power mode, skipping\r\n");
+				return;
+			} else if (capa_lvl == 1) {
+				// Medium power mode
+				DEBUG_PRINT("Medium power mode, sending at -10dBm\r\n");
+				S2LP_SetPALeveldBm(-10);
+			} else {
+				// Full power mode
+				DEBUG_PRINT("Full power mode, sending at PA_LEVEL\r\n");
+				S2LP_SetPALeveldBm(PA_LEVEL);
+			}
+		#endif
+
 		// Send the spectrogram
 		send_spectrogram();
 	}

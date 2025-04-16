@@ -28,7 +28,7 @@
  * USE_BUTTON       - Enables the use of a button (should not be needed).
  *                    Default: 0 (button support disabled).
  */
-#define NO_UART          1
+#define NO_UART          0
 #define NO_DEBUG         0
 #define NO_DEBUGPRINT    0
 #define NO_DEBUGFAST_P   0
@@ -47,9 +47,23 @@
  * OPT_PACKET_ON - Activates optimizations for packetization.
  *                 (By default, hardware acceleration is used.)
  *                 Default: 1 (enabled).
+ * 
+ * OPT_S2LP_DYN_POWER_ON - Activates dynamic power optimization for S2LP.
+ *                        Default: 1 (enabled).
+ * 
+ * CAPA_LVL_1  - Capacity level 1.
+ *              Default: 0.40. (3.96V -> 1.97mJ)
+ * 
+ * CAPA_LVL_2  - Capacity level 2.
+ *             Default: 0.75. (4.27V -> 3.85mJ)
+ * 
  */
 #define OPT_CHAIN_ON   1
 #define OPT_PACKET_ON  1
+#define OPT_S2LP_DYN_POWER_ON  1
+
+#define CAPA_LVL_1  0.40
+#define CAPA_LVL_2  0.75
 
 // =============================================================================
 // Chain Defines
