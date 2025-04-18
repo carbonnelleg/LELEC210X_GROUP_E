@@ -237,8 +237,6 @@ char threshold_MELWorkingBuf() {
 void ProcessADCData() {
 	// Check if the buffer is ready
 	if (buffer_ready) {
-		// Reset the buffer ready flag
-		buffer_ready = 0;
 
 		// Process the current buffer
 		Full_spectrogram_compute((q15_t*) ADCWorkingBuf, MELWorkingBuf);
@@ -268,6 +266,9 @@ void ProcessADCData() {
 
 		// Send the spectrogram
 		send_spectrogram();
+
+		// Reset the buffer ready flag (Avoid Race Condition)
+		buffer_ready = 0;
 	}
 }
 

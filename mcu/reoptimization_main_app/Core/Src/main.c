@@ -118,11 +118,6 @@ uint8_t analogRead_CapaLvl(void)
   DEBUG_PRINT("CAPAC_LVL_1: %d\r\n", ((uint8_t)( CAPA_LVL_1*12.0f) + 48));
   DEBUG_PRINT("CAPAC_LVL_2: %d\r\n", ((uint8_t)( CAPA_LVL_2*12.0f) + 48));
 
-  // If the capacitor is lower than 48, then the MCU is at 3.3V supply
-  if (20 < value && value < 28) {
-    return 3; // Full-Charge, as supplied by USB or 3.3V supply
-  }
-
   // Give a level depending on the threshold reached
   if (value < ((uint8_t)(CAPA_LVL_1*12.0f) + 48)) {
     return 0; // Low
