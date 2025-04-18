@@ -3,7 +3,9 @@
  */
 #include "config.h"
 #include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal_uart.h"
 #include "main.h"
+#include "utils.h"
 
 #if (NO_PERF == 0)
 
@@ -49,3 +51,10 @@ void hex_encode(char* s, const uint8_t* buf, size_t len) {
         s[i*2+1] = "0123456789abcdef"[buf[i] & 0xF];
     }
 }
+
+extern UART_HandleTypeDef hlpuart1; // Declared in main.c
+
+void fast_debug_print(const char* data, size_t size) {
+	// Send the data to the UART
+	HAL_UART_Transmit(&hlpuart1, (uint8_t*)data, size, HAL_MAX_DELAY);
+}	

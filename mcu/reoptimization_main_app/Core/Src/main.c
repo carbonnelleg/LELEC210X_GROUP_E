@@ -143,7 +143,7 @@ void run(void)
 
   //while (1) {
   //  HAL_Delay(100);
-  //  DEBUG_PRINT("Battery Level: %d\r\n", analogRead_CapaLvl());
+  //  DEBUG_PRINT_FAST("TEST\r\n", 6);
   //}
 
 	while (1)

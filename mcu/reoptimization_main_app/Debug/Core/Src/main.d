@@ -38,9 +38,10 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/spi.h ../Core/Inc/tim.h ../Core/Inc/gpio.h \
  C:/Dev/GIT/LELEC210X_GROUP_E/mcu/reoptimization_main_app/ARM_CMSIS/CMSIS/DSP/Include/arm_math.h \
  ../Drivers/CMSIS/Include/cmsis_compiler.h ../Core/Inc/adc_dblbuf.h \
- ../Core/Inc/config.h ../Core/Inc/retarget.h ../Core/Inc/s2lp.h \
- ../Core/Inc/spectrogram.h ../Core/Inc/eval_radio.h ../Core/Inc/packet.h \
- ../Core/Inc/config.h ../Core/Inc/utils.h ../Core/Inc/usart.h
+ ../Core/Inc/config.h ../Core/Inc/utils.h ../Core/Inc/retarget.h \
+ ../Core/Inc/s2lp.h ../Core/Inc/spectrogram.h ../Core/Inc/eval_radio.h \
+ ../Core/Inc/packet.h ../Core/Inc/config.h ../Core/Inc/utils.h \
+ ../Core/Inc/usart.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -88,6 +89,7 @@ C:/Dev/GIT/LELEC210X_GROUP_E/mcu/reoptimization_main_app/ARM_CMSIS/CMSIS/DSP/Inc
 ../Drivers/CMSIS/Include/cmsis_compiler.h:
 ../Core/Inc/adc_dblbuf.h:
 ../Core/Inc/config.h:
+../Core/Inc/utils.h:
 ../Core/Inc/retarget.h:
 ../Core/Inc/s2lp.h:
 ../Core/Inc/spectrogram.h:

@@ -1,6 +1,6 @@
 Core/Src/packet.o: ../Core/Src/packet.c ../Core/Inc/aes_ref.h \
- ../Core/Inc/config.h ../Core/Inc/packet.h ../Core/Inc/main.h \
- ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
+ ../Core/Inc/config.h ../Core/Inc/utils.h ../Core/Inc/packet.h \
+ ../Core/Inc/main.h ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h \
  ../Core/Inc/stm32l4xx_hal_conf.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rcc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_def.h \
@@ -39,6 +39,7 @@ Core/Src/packet.o: ../Core/Src/packet.c ../Core/Inc/aes_ref.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_cryp_ex.h
 ../Core/Inc/aes_ref.h:
 ../Core/Inc/config.h:
+../Core/Inc/utils.h:
 ../Core/Inc/packet.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:

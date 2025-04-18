@@ -39,7 +39,13 @@ static void print_encoded_packet(uint8_t *packet) {
 	#if (NO_DEBUGPRINT == 0)
 		char hex_encoded_packet[2*PACKET_LENGTH+1];
 		hex_encode(hex_encoded_packet, packet, PACKET_LENGTH);
-		DEBUG_PRINT("DF:HEX:%s\r\n", hex_encoded_packet);
+		#if (NO_DEBUGFAST_P == 0)
+			DEBUG_PRINT_FAST("DF:HEX:", 7);
+			DEBUG_PRINT_FAST(hex_encoded_packet, 2*PACKET_LENGTH);
+			DEBUG_PRINT_FAST("\r\n", 2);
+		#else
+			DEBUG_PRINT("DF:HEX:%s\r\n", hex_encoded_packet);
+		#endif
 	#endif
 }
 

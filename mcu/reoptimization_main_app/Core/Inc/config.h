@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "utils.h"
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -228,9 +229,9 @@
 
 // Fast Debug print macro
 #if (NO_DEBUGFAST_P == 0)
-    #define DEBUG_PRINT_FAST(data, size) do{ HAL_UART_Transmit(&hlpuart1, (uint8_t*)data, size, HAL_MAX_DELAY); } while( 0 )
+    #define DEBUG_PRINT_FAST(data, size) do { fast_debug_print(data, size); } while(0)
 #else
-    #define DEBUG_PRINT_FAST(...) do{ } while ( 0 )
+    #define DEBUG_PRINT_FAST(data, size) do { } while(0)
 #endif
 
 // Deactivate performance metrics with the NO_PERF flag
