@@ -52,10 +52,10 @@
  *                        Default: 1 (enabled).
  * 
  * CAPA_LVL_1  - Capacity level 1.
- *              Default: 0.40. (3.96V -> 1.97mJ)
+ *              Default: 0.40. (3.96V -> 1.97mJ, discharges to 3.4V)
  * 
  * CAPA_LVL_2  - Capacity level 2.
- *             Default: 0.75. (4.27V -> 3.85mJ)
+ *             Default: 0.75. (4.27V -> 3.85mJ, discharges to 3.8V)
  * 
  */
 #define OPT_CHAIN_ON   1
