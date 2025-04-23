@@ -88,4 +88,5 @@ ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
 
 plt.tight_layout()
 plt.savefig('telecom_power_plot.png')
+plt.savefig('telecom_power_plot.pdf')
 plt.show()
