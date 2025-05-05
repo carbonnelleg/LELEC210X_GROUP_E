@@ -63,7 +63,7 @@
 #define OPT_PACKET_ON  1
 #define OPT_S2LP_DYN_POWER_ON  1
 
-#define CAPA_LVL_1  0.40
+#define CAPA_LVL_1  0.50
 #define CAPA_LVL_2  0.75
 
 // =============================================================================
