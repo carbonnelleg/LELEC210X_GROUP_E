@@ -63,8 +63,8 @@
 #define OPT_PACKET_ON  1
 #define OPT_S2LP_DYN_POWER_ON  1
 
-#define CAPA_LVL_1  0.50
-#define CAPA_LVL_2  0.75
+#define CAPA_LVL_1  0.55
+#define CAPA_LVL_2  0.82
 
 // =============================================================================
 // Chain Defines
@@ -91,7 +91,7 @@
  * OPT_AMPL    - Enable (1) or disable (0) amplitude optimization.
  *               Default: 0 (disabled).
  */
-#define MEL_VEC_LENGTH   20
+#define MEL_VEC_LENGTH   18
 #define MEL_NUM_VEC      20
 #define SAMPLES_NUM      512
 

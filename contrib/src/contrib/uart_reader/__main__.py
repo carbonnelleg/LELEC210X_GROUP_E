@@ -1517,7 +1517,7 @@ def database_init(db: dbu.ContentDatabase):
     db.add_item(
         "MEL Settings",
         "mel_number",
-        db.Integer("MEL Number", 20, "The number of MEL vectors in the feature vector"),
+        db.Integer("MEL Number", 18, "The number of MEL vectors in the feature vector"),
     )
     # TODO: Add more MEL settings
     db.add_item(

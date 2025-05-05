@@ -2,5 +2,5 @@
 ../Core/Src/spectrogram.c:58:6:step1_123_batch_pre_process	8
 ../Core/Src/spectrogram.c:72:6:step3_approximate_magnitude	2
 ../Core/Src/spectrogram.c:104:6:step23_batch_fft	3
-../Core/Src/spectrogram.c:121:6:step4_mel_filter_apply	8
+../Core/Src/spectrogram.c:121:6:step4_mel_filter_apply	11
 ../Core/Src/spectrogram.c:129:6:Full_spectrogram_compute	8
