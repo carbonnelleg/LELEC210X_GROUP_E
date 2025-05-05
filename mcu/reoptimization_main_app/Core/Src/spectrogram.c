@@ -16,7 +16,7 @@
 
 void mel_filter_apply(q15_t *fft_array, q15_t *mel_array, size_t fft_len, size_t mel_len) {
 	// Process 4 triangles at once through loop unrolling, and register variables
-	for (size_t i = 0; i < mel_len; i += 4) {
+	for (size_t i = 0; i + 3 < mel_len; i += 4) {
 		// Load the Mel triangle values
 		const q15_t* mel_values_0 = mel_triangles[i].values;
         const q15_t* mel_values_1 = mel_triangles[i+1].values;
